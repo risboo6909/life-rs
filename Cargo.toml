@@ -1,0 +1,7 @@
+[package]
+name = "life-rs"
+version = "0.1.0"
+authors = ["risboo6909 <ttyv00@gmail.com"]
+
+[dependencies]
+piston_window = "0.60.0"
