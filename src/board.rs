@@ -3,14 +3,20 @@ pub mod board {
     use std::cmp::max;
     use std::collections::HashSet;
 
-    #[derive(PartialEq, Eq, Hash)]
+    #[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
     pub struct Coord {
         pub col: usize,
         pub row: usize,
     }
 
+    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+    pub enum Cell {
+        Empty,
+        Occupied
+    }
+
     pub struct Board {
-        cells: Vec<Vec<bool>>,
+        cells: Vec<Vec<Cell>>,
         occupied: HashSet<Coord>,
     }
 
@@ -22,10 +28,10 @@ pub mod board {
             let cols = max(width, 1);
             let rows = max(height, 1);
 
-            let mut tmp: Vec<Vec<bool>> = Vec::new();
+            let mut tmp: Vec<Vec<Cell>> = Vec::new();
 
             for _ in 0..rows {
-                tmp.push(vec![false; cols]);
+                tmp.push(vec![Cell::Empty; cols]);
             }
 
             Board {cells: tmp, occupied: HashSet::new()}
@@ -52,26 +58,26 @@ pub mod board {
             }
 
             if col >= self.cells[row].len() {
-                self.cells[row].push(false);
+                self.cells[row].push(Cell::Empty);
             }
 
         }
 
         pub fn born_at(&mut self, col: usize, row: usize) {
             self.ensure_cell(col, row);
-            self.cells[row][col] = true;
+            self.cells[row][col] = Cell::Occupied;
 
             self.occupied.insert(Coord {col: col, row: row});
         }
 
         pub fn kill_at(&mut self, col: usize, row: usize) {
             self.ensure_cell(col, row);
-            self.cells[row][col] = false;
+            self.cells[row][col] = Cell::Empty;
 
             self.occupied.remove(&Coord {col: col, row: row});
         }
 
-        pub fn get_cell(&mut self, col: usize, row: usize) -> bool {
+        pub fn get_cell(&mut self, col: usize, row: usize) -> Cell {
             self.ensure_cell(col, row);
             self.cells[row][col]
         }
@@ -100,27 +106,31 @@ fn test_board_ok() {
     my_board.born_at(5, 2);
 
     // test allocated cells
-    assert_eq!(my_board.get_cell(0, 0), true);
-    assert_eq!(my_board.get_cell(4, 4), true);
+    assert_eq!(my_board.get_cell(0, 0), board::Cell::Occupied);
+    assert_eq!(my_board.get_cell(4, 4), board::Cell::Occupied);
 
     // test previously expanded cell
-    assert_eq!(my_board.get_cell(5, 2), true);
+    assert_eq!(my_board.get_cell(5, 2), board::Cell::Occupied);
 
     // test existing cell
-    assert_eq!(my_board.get_cell(2, 2), false);
+    assert_eq!(my_board.get_cell(2, 2), board::Cell::Empty);
 
     // check extended cell
-    assert_eq!(my_board.get_cell(5, 3), false);
+    assert_eq!(my_board.get_cell(5, 3), board::Cell::Empty);
 
     my_board.kill_at(0, 0);
-    assert_eq!(my_board.get_cell(0, 0), false);
+    assert_eq!(my_board.get_cell(0, 0), board::Cell::Empty);
 
     let mut expected: HashSet<board::Coord> = HashSet::new();
 
-    expected.insert(board::Coord{col: 4, row: 4});
     expected.insert(board::Coord{col: 5, row: 2});
+    expected.insert(board::Coord{col: 4, row: 4});
 
-    assert_eq!(expected.iter().eq(my_board.get_occupied()), true);
+    let tmp = my_board.get_occupied().collect::<Vec<&board::Coord>>();
+
+    assert_eq!(tmp.contains(&&board::Coord{col: 5, row: 2}), true);
+    assert_eq!(tmp.contains(&&board::Coord{col: 4, row: 4}), true);
+    assert_eq!(tmp.len(), 2);
 
 }
 
