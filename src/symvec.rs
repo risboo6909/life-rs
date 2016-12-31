@@ -1,6 +1,5 @@
 use std::ops::{Index, IndexMut};
 
-
 pub struct SymVec<T> {
     pub vec_neg: Vec<T>,
     pub vec_pos: Vec<T>,
@@ -46,6 +45,38 @@ impl<T> IndexMut<isize> for SymVec<T> {
     }
 }
 
+impl<'a, T: 'a> IntoIterator for &'a SymVec<T> {
+    type Item = &'a T;
+    type IntoIter = SymVecIntoIterator<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        SymVecIntoIterator{symvec: self, idx: -(self.len_neg() as isize) - 1}
+    }
+}
+
+pub struct SymVecIntoIterator<'a, T: 'a> {
+    symvec: &'a SymVec<T>,
+    idx: isize,
+}
+
+impl<'a, T> Iterator for SymVecIntoIterator<'a, T> {
+
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<&'a T> {
+        self.idx += 1;
+
+        if self.idx < (self.symvec.len_pos() as isize) {
+            Some(&self.symvec[self.idx])
+
+        } else {
+            None
+        }
+
+    }
+
+}
+
 impl<T> SymVec<T> {
     pub fn new() -> Self {
         SymVec{vec_neg: Vec::new(), vec_pos: Vec::new()}
@@ -77,6 +108,14 @@ impl<T> SymVec<T> {
 
     pub fn need_extend_neg(&self, idx: isize) -> bool {
         -(1 + idx) >= (self.len_neg() as isize)
+    }
+
+    pub fn is_available(&self, idx: isize) -> bool {
+        if idx >= 0 {
+            !self.need_extend_pos(idx)
+        } else {
+            !self.need_extend_neg(idx)
+        }
     }
 }
 
@@ -117,4 +156,27 @@ fn test_extend()
     assert!(v.need_extend_neg(-1) == false);
     assert!(v.need_extend_neg(-2) == true);
 
+}
+
+#[test]
+fn test_iterator() {
+    let mut v: SymVec<i32> = SymVec::new();
+    v.push_back(-1);
+    v.push_back(-2);
+    v.push_front(1);
+    v.push_front(2);
+    v.push_front(3);
+
+    let mut v2: Vec<&i32> = v.into_iter().collect();
+    assert!(*v2[0] == -2);
+    assert!(*v2[1] == -1);
+    assert!(*v2[2] == 1);
+    assert!(*v2[3] == 2);
+    assert!(*v2[4] == 3);
+}
+
+#[test]
+fn test_expand()
+{
+    let mut v: SymVec<i32> = SymVec::new();
 }
