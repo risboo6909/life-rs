@@ -10,7 +10,7 @@ pub struct Coord {
     pub row: isize,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum Cell {
     Empty,
     Occupied
@@ -50,25 +50,24 @@ impl Board {
 
     pub fn ensure_cell(&mut self, col: isize, row: isize) {
 
-        // extend board by 1 if needed, no need to extend more
-        // because we always scan vicinity of radius 1 of any cell
+        // extend board by any number of cells if needed
 
         if row >= 0 {
-            if self.cells.need_extend_pos(row) {
+            while self.cells.need_extend_pos(row) {
                 self.cells.push_front(SymVec::new());
             }
         } else {
-            if self.cells.need_extend_neg(row) {
+            while self.cells.need_extend_neg(row) {
                 self.cells.push_back(SymVec::new());
             }
         }
 
         if col >= 0 {
-            if self.cells[row].need_extend_pos(col) {
+            while self.cells[row].need_extend_pos(col) {
                 self.cells[row].push_front(Cell::Empty);
             }
         } else {
-            if self.cells[row].need_extend_neg(col) {
+            while self.cells[row].need_extend_neg(col) {
                 self.cells[row].push_back(Cell::Empty);
             }
         }
@@ -89,34 +88,119 @@ impl Board {
         self.occupied.remove(&Coord {col: col, row: row});
     }
 
-    pub fn get_cell(&mut self, col: isize, row: isize) -> Cell {
-        self.ensure_cell(col, row);
-        self.cells[row][col]
+    pub fn is_alive(&self, col: isize, row: isize) -> bool {
+        self.get_cell(col, row) != Cell::Empty
     }
 
-    pub fn get_vicinity(&mut self, col: isize, row: isize) -> Vec<Cell> {
+    pub fn get_cell(&self, col: isize, row: isize) -> Cell {
+        // if cell is not yet initialized it is considered as free
+        if self.cells.is_available(row) && self.cells[row].is_available(col) {
+            self.cells[row][col]
+        } else {
+            Cell::Empty
+        }
+    }
+
+    pub fn get_vicinity(&self, col: isize, row: isize) -> Vec<bool> {
 
         // get contents of 8 neighbours of a given cell
 
         let neighbours = vec![
-            self.get_cell(col - 1, row),
-            self.get_cell(col - 1, row - 1),
-            self.get_cell(col, row - 1),
-            self.get_cell(col + 1, row - 1),
-            self.get_cell(col + 1, row),
-            self.get_cell(col + 1, row + 1),
-            self.get_cell(col, row + 1),
-            self.get_cell(col - 1, row +1),
+            self.is_alive(col - 1, row),
+            self.is_alive(col - 1, row - 1),
+            self.is_alive(col, row - 1),
+            self.is_alive(col + 1, row - 1),
+            self.is_alive(col + 1, row),
+            self.is_alive(col + 1, row + 1),
+            self.is_alive(col, row + 1),
+            self.is_alive(col - 1, row +1),
         ];
 
         neighbours
     }
 
-    pub fn get_occupied<'a>(&'a self) -> Box<Iterator<Item=&'a Coord> + 'a> {
-        Box::new(self.occupied.iter())
+    pub fn get_occupied(&self) -> Vec<&Coord> {
+        self.occupied.iter().collect()
+    }
+
+}
+
+impl<'a> IntoIterator for &'a Board {
+    type Item = (Coord, bool);
+    type IntoIter = BoardIntoIterator<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        let row = self.cells.len_neg() as isize;
+        let col = self.cells[row].len_neg() as isize - 1;
+
+        BoardIntoIterator{board: self, row: row, col: col,
+                          cell_iter: Box::new(self.cells[row].into_iter())}
+    }
+
+}
+
+pub struct BoardIntoIterator<'a> {
+    board: &'a Board,
+    row: isize,
+    col: isize,
+    cell_iter: Box<Iterator<Item=&'a Cell> + 'a>,
+}
+
+impl<'a> Iterator for BoardIntoIterator<'a> {
+
+    type Item = (Coord, bool);
+
+    fn next(&mut self) -> Option<(Coord, bool)> {
+
+        match self.cell_iter.next() {
+
+            Some(e) => {
+
+                self.col += 1;
+                return Some((Coord{col: self.col, row: self.row},
+                                   self.board.is_alive(self.col, self.row)))
+
+            }
+
+            None => {
+
+                if self.row < self.board.cells.len_pos() as isize - 1 {
+
+                    self.row += 1;
+                    self.col = self.board.cells[self.row].len_neg() as isize;
+
+                    self.cell_iter = Box::new(self.board.cells[self.row].into_iter());
+                    self.cell_iter.next();
+
+                    return Some((Coord{col: self.col, row: self.row},
+                                       self.board.is_alive(self.col, self.row)))
+
+                } else {
+                    return None;
+                }
+
+            }
+
+        }
+
     }
 }
 
+impl ToString for Board {
+    fn to_string(&self) -> String {
+
+        let mut output = String::new();
+
+        for (_, is_alive) in self.into_iter() {
+            if is_alive {
+                output.push('*');
+            } else {
+                output.push('.');
+            }
+        }
+        output
+    }
+}
 
 #[test]
 fn test_board_ok() {
@@ -153,12 +237,33 @@ fn test_board_ok() {
     expected.insert(Coord{col: 5, row: 2});
     expected.insert(Coord{col: 4, row: 4});
 
-    let tmp = my_board.get_occupied().collect::<Vec<&Coord>>();
+    let tmp = my_board.get_occupied();
 
-    assert_eq!(tmp.contains(&&Coord{col: 5, row: 2}), true);
     assert_eq!(tmp.contains(&&Coord{col: 4, row: 4}), true);
+    assert_eq!(tmp.contains(&&Coord{col: 5, row: 2}), true);
     assert_eq!(tmp.len(), 2);
+}
 
+#[test]
+fn test_board_iter() {
+
+    let mut my_board = Board::new(5, 5);
+
+    my_board.born_at(0, 0);
+    my_board.born_at(1, 1);
+    my_board.born_at(2, 2);
+    my_board.born_at(3, 3);
+    my_board.born_at(4, 4);
+
+    let mut ctr = 0;
+
+    for (_, is_alive) in my_board.into_iter() {
+        if is_alive {
+            ctr += 1;
+        }
+    }
+
+    assert!(ctr == 5);
 }
 
 //
