@@ -27,6 +27,12 @@ pub enum Cell {
     Occupied
 }
 
+pub struct CellDesc {
+    pub coord: Coord,
+    pub is_alive: bool,
+    pub new_line: bool,
+}
+
 pub struct Board {
     cells: SymVec<SymVec<Cell>>,
 }
@@ -35,9 +41,9 @@ impl Board {
 
     pub fn new(width: usize, height: usize) -> Board {
 
-        // minimum board size is 4x4
-        let cols = max(width, 4);
-        let rows = max(height, 4);
+        // minimum board size is 1x1
+        let cols = max(width, 1);
+        let rows = max(height, 1);
 
         Board {cells: Board::allocate(cols, rows)}
 
@@ -139,7 +145,7 @@ impl Board {
 }
 
 impl<'a> IntoIterator for &'a Board {
-    type Item = (Coord, bool, bool);
+    type Item = CellDesc;
     type IntoIter = BoardIntoIterator<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -161,17 +167,19 @@ pub struct BoardIntoIterator<'a> {
 
 impl<'a> Iterator for BoardIntoIterator<'a> {
 
-    type Item = (Coord, bool, bool);
+    type Item = CellDesc;
 
-    fn next(&mut self) -> Option<(Coord, bool, bool)> {
+    fn next(&mut self) -> Option<CellDesc> {
 
         match self.cell_iter.next() {
 
             Some(e) => {
 
                 self.col += 1;
-                let coord = Coord {col: self.col, row: self.row};
-                return Some((coord, self.board.is_alive(self.col, self.row), false))
+                let coord = Coord{col: self.col, row: self.row};
+                Some(CellDesc { coord: coord,
+                                is_alive: self.board.is_alive(self.col, self.row),
+                                new_line: false })
             }
 
             None => {
@@ -186,11 +194,12 @@ impl<'a> Iterator for BoardIntoIterator<'a> {
                     self.cell_iter = Box::new(self.board.cells[self.row].into_iter());
                     self.cell_iter.next();
 
-                    return Some((Coord{col: self.col, row: self.row},
-                                       self.board.is_alive(self.col, self.row), true))
+                    Some(CellDesc { coord: Coord{col: self.col, row: self.row },
+                                  is_alive: self.board.is_alive(self.col, self.row),
+                                  new_line: true})
 
                 } else {
-                    return None;
+                    None
                 }
 
             }
@@ -205,7 +214,7 @@ impl ToString for Board {
 
         let mut output = String::new();
 
-        for (_, is_alive, new_line) in self.into_iter() {
+        for CellDesc { coord, is_alive, new_line } in self.into_iter() {
             if new_line {
                 output.push('\n');
             }
@@ -251,8 +260,8 @@ fn test_board_ok() {
 
     let mut expected: HashSet<Coord> = HashSet::new();
 
-    expected.insert(Coord{col: 5, row: 2});
-    expected.insert(Coord{col: 4, row: 4});
+    expected.insert(Coord { col: 5, row: 2 });
+    expected.insert(Coord { col: 4, row: 4 });
 }
 
 #[test]
@@ -268,7 +277,7 @@ fn test_board_iter() {
 
     let mut ctr = 0;
 
-    for (_, is_alive, _) in my_board.into_iter() {
+    for CellDesc { coord, is_alive, .. } in my_board.into_iter() {
         if is_alive {
             ctr += 1;
         }

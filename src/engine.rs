@@ -1,5 +1,5 @@
 use ::board::Board;
-use ::board::Coord;
+use ::board::{Coord, CellDesc};
 
 
 pub struct Engine {
@@ -22,12 +22,12 @@ impl Engine {
 
     pub fn one_iteration(&mut self) {
 
-        let mut next_gen = Board::new(4, 4);
+        let mut next_gen = Board::new(1, 1);
 
-        for (coords, is_alive, _) in self.board.into_iter() {
+        for CellDesc { coord, is_alive, .. } in self.board.into_iter() {
 
-            let col = coords.col;
-            let row = coords.row;
+            let col = coord.col;
+            let row = coord.row;
 
             // check game rules against current cell
             let neighbours = self.board.get_vicinity(col, row);

@@ -31,10 +31,11 @@ impl<T> Index<isize> for SymVec<T> {
             &self.vec_neg[abs_idx]
 
         } else {
-            if idx as usize >= self.vec_pos.len() {
+            let abs_idx = idx as usize;
+            if abs_idx >= self.vec_pos.len() {
                 panic!("No element with index {}", idx);
             }
-            &self.vec_pos[idx as usize]
+            &self.vec_pos[abs_idx]
         }
     }
 
@@ -50,10 +51,11 @@ impl<T> IndexMut<isize> for SymVec<T> {
             &mut self.vec_neg[abs_idx]
 
         } else {
-            if idx as usize >= self.vec_pos.len() {
+            let abs_idx = idx as usize;
+            if abs_idx >= self.vec_pos.len() {
                 panic!("No element with index {}", idx);
             }
-            &mut self.vec_pos[idx as usize]
+            &mut self.vec_pos[abs_idx]
         }
     }
 }
@@ -78,10 +80,8 @@ impl<'a, T> Iterator for SymVecIntoIterator<'a, T> {
 
     fn next(&mut self) -> Option<&'a T> {
         self.idx += 1;
-
         if self.idx < (self.symvec.len_pos() as isize) {
             Some(&self.symvec[self.idx])
-
         } else {
             None
         }
@@ -91,8 +91,10 @@ impl<'a, T> Iterator for SymVecIntoIterator<'a, T> {
 }
 
 impl<T> SymVec<T> {
+
     pub fn new() -> Self {
-        SymVec{vec_neg: Vec::new(), vec_pos: Vec::new()}
+        SymVec{vec_neg: Vec::new(),
+               vec_pos: Vec::new()}
     }
 
     pub fn push_front(&mut self, e: T) {
@@ -120,7 +122,7 @@ impl<T> SymVec<T> {
     }
 
     pub fn need_extend_neg(&self, idx: isize) -> bool {
-        -(1 + idx) >= (self.len_neg() as isize)
+        -idx >= (self.len_neg() as isize) + 1
     }
 
     pub fn is_available(&self, idx: isize) -> bool {
@@ -130,6 +132,7 @@ impl<T> SymVec<T> {
             !self.need_extend_neg(idx)
         }
     }
+
 }
 
 

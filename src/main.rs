@@ -9,7 +9,7 @@ mod engine;
 
 use piston_window::*;
 use engine::Engine;
-use board::Board;
+use board::{Board, CellDesc};
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::time::{Instant, Duration};
@@ -66,9 +66,10 @@ impl Game {
     }
 
     fn event_dispatcher(&mut self) {
+
         let mut last_iter_time = Instant::now();
 
-        while true {
+        loop {
 
             let event = { self.window.borrow_mut().next() };
 
@@ -107,18 +108,18 @@ impl Game {
 
             let board = self.engine.get_board();
 
-            for (coords, is_alive, _) in board.into_iter() {
+            for CellDesc {coord, is_alive, ..} in board.into_iter() {
 
                 if is_alive {
 
-                    let col = coords.col;
-                    let row = coords.row;
+                    let col = coord.col;
+                    let row = coord.row;
 
                     let (x, y) = self.to_screen(col, row);
                     //println!("{}, {}", x, y);
                     rectangle([0.5, 1.0, 0.0, 0.3],
                               [x, y, 10.0, 10.0],
-                              c.transform, g);
+                               c.transform, g);
                 }
             }
 
