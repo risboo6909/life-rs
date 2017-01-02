@@ -1,3 +1,18 @@
+/// Vector that can be extended in both directions
+/// thus indices could be positive or negative. It is represented as
+/// two independent Vecs inside so both sides extensions are
+/// very fast (approx constant time), indexing is also a constant.
+/// ```
+/// let mut v: SymVec<i32> = SymVec::new();
+/// v.push_back(10);
+/// v.push_back(20);
+/// v.push_front(5);
+/// v.push_front(6);
+/// v.push_front(7);
+/// ```
+/// Will create a SymVec containing elements: 20, 10, 5, 6, 7
+/// with indices:                             -2  -1  0  1  2
+
 use std::ops::{Index, IndexMut};
 
 pub struct SymVec<T> {
@@ -6,9 +21,7 @@ pub struct SymVec<T> {
 }
 
 impl<T> Index<isize> for SymVec<T> {
-
     type Output = T;
-
     fn index(&self, idx: isize) -> &T {
         if idx < 0 {
             let abs_idx = -(1 + idx) as usize;
@@ -122,6 +135,7 @@ impl<T> SymVec<T> {
 
 #[test]
 fn test_push_front_back() {
+
     let mut v: SymVec<i32> = SymVec::new();
 
     v.push_front(1);
@@ -139,6 +153,7 @@ fn test_push_front_back() {
 #[test]
 fn test_extend()
 {
+
     let mut v: SymVec<i32> = SymVec::new();
 
     assert!(v.need_extend_pos(0) == true);
@@ -160,6 +175,7 @@ fn test_extend()
 
 #[test]
 fn test_iterator() {
+
     let mut v: SymVec<i32> = SymVec::new();
     v.push_back(-1);
     v.push_back(-2);
@@ -173,6 +189,7 @@ fn test_iterator() {
     assert!(*v2[2] == 1);
     assert!(*v2[3] == 2);
     assert!(*v2[4] == 3);
+
 }
 
 #[test]
