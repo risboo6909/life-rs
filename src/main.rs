@@ -12,6 +12,7 @@ use engine::Engine;
 use board::Board;
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::time::{Instant, Duration};
 
 enum State {
     Working,
@@ -44,14 +45,29 @@ impl Game {
 
         game_board.born_at(0, 0);
         game_board.born_at(1, 1);
+        game_board.born_at(1, 2);
+        game_board.born_at(0, 2);
+        game_board.born_at(-1, 2);
 
-        Game {width: width, height: height,
+        game_board.born_at(10, 10);
+        game_board.born_at(11, 11);
+        game_board.born_at(11, 12);
+        game_board.born_at(10, 12);
+        game_board.born_at(9, 12);
+
+        Game {
+              width: width,
+              height: height,
               window: Rc::new(RefCell::new(window)),
               engine: Engine::new(game_board),
-              cur_state: State::Paused}
+              cur_state: State::Paused
+            }
+
     }
 
-    fn event_dispatcher(&self) {
+    fn event_dispatcher(&mut self) {
+        let mut last_iter_time = Instant::now();
+
         while true {
 
             let event = { self.window.borrow_mut().next() };
@@ -59,18 +75,29 @@ impl Game {
             match event {
 
                 Some(e) => {
+
                     if let Event::Render(_) = e {
+
                         self.paint(&e);
+
+                        if Instant::now() - last_iter_time >= Duration::from_millis(50) {
+                            self.engine.one_iteration();
+                            last_iter_time = Instant::now();
+                        }
+
                     }
+
                 }
+
                 None => break
 
             }
         }
     }
 
-    fn to_screen(&self, col: isize, row: isize) {
-
+    fn to_screen(&self, col: isize, row: isize) -> (f64, f64) {
+        ((col * 10) as f64 + (self.width as f64 / 2.0),
+         (row * 10) as f64 + (self.height as f64 / 2.0))
     }
 
     fn paint(&self, e: &Event) {
@@ -80,14 +107,19 @@ impl Game {
 
             let board = self.engine.get_board();
 
-            for (coords, is_alive) in board.into_iter() {
-                let col = coords.col;
-                let row = coords.row;
+            for (coords, is_alive, _) in board.into_iter() {
 
-                self.to_screen(col, row);
-                rectangle([0.5, 1.0, 0.0, 0.3],
-                          [0.0, 0.0, 10.0, 10.0],
-                          c.transform, g);
+                if is_alive {
+
+                    let col = coords.col;
+                    let row = coords.row;
+
+                    let (x, y) = self.to_screen(col, row);
+                    //println!("{}, {}", x, y);
+                    rectangle([0.5, 1.0, 0.0, 0.3],
+                              [x, y, 10.0, 10.0],
+                              c.transform, g);
+                }
             }
 
         });
