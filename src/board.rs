@@ -164,6 +164,8 @@ impl<'a> Iterator for BoardIntoIterator<'a> {
 
             None => {
 
+                // ugly but I don't know how to make it better
+
                 if self.row < self.board.cells.len_pos() as isize - 1 {
 
                     self.row += 1;
@@ -265,15 +267,3 @@ fn test_board_iter() {
 
     assert!(ctr == 5);
 }
-
-//
-//#[test]
-//#[should_panic]
-//fn test_board_panic_extend() {
-//
-//    let mut my_board = Board::new(5, 5);
-//
-//    // can't extend board more than 1 cell
-//    my_board.get_cell(3, 6);
-//
-//}
