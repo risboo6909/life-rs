@@ -1,5 +1,16 @@
+/// Expandable game board, it expands on demand in all four directions, constraints
+/// can be defined to limit maxmimum memory consumption (thus the game board
+/// will behave like a torus), otherwise it will expand "forever" consuming memory :]
+///
+/// ```
+/// let mut my_board = Board::new(5, 5);
+/// my_board.born_at(20, 20);
+/// ```
+/// In fact, board of any size can be created and it will expand on demand,
+/// therefor it is recommended to initially create smallest board which
+/// will contain initial configuration.
+
 use std::cmp::max;
-use std::collections::HashSet;
 
 use ::symvec::SymVec;
 
@@ -18,7 +29,6 @@ pub enum Cell {
 
 pub struct Board {
     cells: SymVec<SymVec<Cell>>,
-    occupied: HashSet<Coord>,
 }
 
 impl Board {
@@ -29,7 +39,7 @@ impl Board {
         let cols = max(width, 4);
         let rows = max(height, 4);
 
-        Board {cells: Board::allocate(cols, rows), occupied: HashSet::new()}
+        Board {cells: Board::allocate(cols, rows)}
 
     }
 
@@ -76,16 +86,25 @@ impl Board {
 
     pub fn born_at(&mut self, col: isize, row: isize) {
         self.ensure_cell(col, row);
-        self.cells[row][col] = Cell::Occupied;
 
-        self.occupied.insert(Coord {col: col, row: row});
+        // we must allocate 8 cells around current cell because
+        // new species can potentially be borned there, so we
+        // have to check them on next iteration
+
+        self.ensure_cell(col - 1, row);
+        self.ensure_cell(col - 1, row - 1);
+        self.ensure_cell(col, row - 1);
+        self.ensure_cell(col + 1, row - 1);
+        self.ensure_cell(col + 1, row);
+        self.ensure_cell(col + 1, row + 1);
+        self.ensure_cell(col, row + 1);
+        self.ensure_cell(col - 1, row + 1);
+
+        self.cells[row][col] = Cell::Occupied;
     }
 
     pub fn kill_at(&mut self, col: isize, row: isize) {
-        self.ensure_cell(col, row);
         self.cells[row][col] = Cell::Empty;
-
-        self.occupied.remove(&Coord {col: col, row: row});
     }
 
     pub fn is_alive(&self, col: isize, row: isize) -> bool {
@@ -102,9 +121,7 @@ impl Board {
     }
 
     pub fn get_vicinity(&self, col: isize, row: isize) -> Vec<bool> {
-
         // get contents of 8 neighbours of a given cell
-
         let neighbours = vec![
             self.is_alive(col - 1, row),
             self.is_alive(col - 1, row - 1),
@@ -113,25 +130,21 @@ impl Board {
             self.is_alive(col + 1, row),
             self.is_alive(col + 1, row + 1),
             self.is_alive(col, row + 1),
-            self.is_alive(col - 1, row +1),
+            self.is_alive(col - 1, row + 1),
         ];
 
         neighbours
     }
 
-    pub fn get_occupied(&self) -> Vec<&Coord> {
-        self.occupied.iter().collect()
-    }
-
 }
 
 impl<'a> IntoIterator for &'a Board {
-    type Item = (Coord, bool);
+    type Item = (Coord, bool, bool);
     type IntoIter = BoardIntoIterator<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
-        let row = self.cells.len_neg() as isize;
-        let col = self.cells[row].len_neg() as isize - 1;
+        let row = -(self.cells.len_neg() as isize);
+        let col = -(self.cells[row].len_neg() as isize) - 1;
 
         BoardIntoIterator{board: self, row: row, col: col,
                           cell_iter: Box::new(self.cells[row].into_iter())}
@@ -148,18 +161,17 @@ pub struct BoardIntoIterator<'a> {
 
 impl<'a> Iterator for BoardIntoIterator<'a> {
 
-    type Item = (Coord, bool);
+    type Item = (Coord, bool, bool);
 
-    fn next(&mut self) -> Option<(Coord, bool)> {
+    fn next(&mut self) -> Option<(Coord, bool, bool)> {
 
         match self.cell_iter.next() {
 
             Some(e) => {
 
                 self.col += 1;
-                return Some((Coord{col: self.col, row: self.row},
-                                   self.board.is_alive(self.col, self.row)))
-
+                let coord = Coord {col: self.col, row: self.row};
+                return Some((coord, self.board.is_alive(self.col, self.row), false))
             }
 
             None => {
@@ -169,13 +181,13 @@ impl<'a> Iterator for BoardIntoIterator<'a> {
                 if self.row < self.board.cells.len_pos() as isize - 1 {
 
                     self.row += 1;
-                    self.col = self.board.cells[self.row].len_neg() as isize;
+                    self.col = -(self.board.cells[self.row].len_neg() as isize) + 1;
 
                     self.cell_iter = Box::new(self.board.cells[self.row].into_iter());
                     self.cell_iter.next();
 
                     return Some((Coord{col: self.col, row: self.row},
-                                       self.board.is_alive(self.col, self.row)))
+                                       self.board.is_alive(self.col, self.row), true))
 
                 } else {
                     return None;
@@ -193,7 +205,10 @@ impl ToString for Board {
 
         let mut output = String::new();
 
-        for (_, is_alive) in self.into_iter() {
+        for (_, is_alive, new_line) in self.into_iter() {
+            if new_line {
+                output.push('\n');
+            }
             if is_alive {
                 output.push('*');
             } else {
@@ -238,12 +253,6 @@ fn test_board_ok() {
 
     expected.insert(Coord{col: 5, row: 2});
     expected.insert(Coord{col: 4, row: 4});
-
-    let tmp = my_board.get_occupied();
-
-    assert_eq!(tmp.contains(&&Coord{col: 4, row: 4}), true);
-    assert_eq!(tmp.contains(&&Coord{col: 5, row: 2}), true);
-    assert_eq!(tmp.len(), 2);
 }
 
 #[test]
@@ -259,11 +268,28 @@ fn test_board_iter() {
 
     let mut ctr = 0;
 
-    for (_, is_alive) in my_board.into_iter() {
+    for (_, is_alive, _) in my_board.into_iter() {
         if is_alive {
             ctr += 1;
         }
     }
 
     assert!(ctr == 5);
+}
+
+#[test]
+fn test_glyder() {
+    let mut my_board = Board::new(5, 5);
+
+    my_board.born_at(0, 0);
+    my_board.born_at(1, 1);
+    my_board.born_at(1, 2);
+    my_board.born_at(0, 2);
+    my_board.born_at(-1, 2);
+
+    assert_eq!(my_board.is_alive(0, 0), true);
+    assert_eq!(my_board.is_alive(1, 1), true);
+    assert_eq!(my_board.is_alive(1, 2), true);
+    assert_eq!(my_board.is_alive(0, 2), true);
+    assert_eq!(my_board.is_alive(-1, 2), true);
 }
