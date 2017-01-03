@@ -20,6 +20,10 @@ impl Engine {
         &self.board
     }
 
+    pub fn get_board_mut(&mut self) -> &mut Board {
+        &mut self.board
+    }
+
     pub fn one_iteration(&mut self) {
 
         let mut next_gen = Board::new(1, 1);
