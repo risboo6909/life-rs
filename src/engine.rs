@@ -1,14 +1,14 @@
 use ::board::Board;
-use ::board::{Coord, CellDesc};
+use ::board::{Coord, CellDesc, RestrictedBoard};
 
 
 pub struct Engine {
-    pub board: Board,
+    pub board: Board<RestrictedBoard>,
 }
 
 impl Engine {
 
-    pub fn new(new_board: Board) -> Self {
+    pub fn new(new_board: Board<RestrictedBoard>) -> Self {
         Engine {board: new_board}
     }
 
@@ -16,11 +16,11 @@ impl Engine {
 
     }
 
-    pub fn get_board(&self) -> &Board {
+    pub fn get_board(&self) -> &Board<RestrictedBoard> {
         &self.board
     }
 
-    pub fn get_board_mut(&mut self) -> &mut Board {
+    pub fn get_board_mut(&mut self) -> &mut Board<RestrictedBoard> {
         &mut self.board
     }
 

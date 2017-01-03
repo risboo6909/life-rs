@@ -33,19 +33,61 @@ pub struct CellDesc {
     pub new_line: bool,
 }
 
-pub struct Board {
+pub struct Board<T: Bounds> {
     cells: SymVec<SymVec<Cell>>,
+    bounds: T,
 }
 
-impl Board {
+pub trait Bounds {
+    fn new(width: Option<usize>, height: Option<usize>) -> Self;
+    fn width(&self) -> Option<usize>;
+    fn height(&self) -> Option<usize>;
+}
 
-    pub fn new(width: usize, height: usize) -> Board {
+pub struct RestrictedBoard {
+    width: Option<usize>,
+    height: Option<usize>,
+}
+
+pub struct InfBoard {
+    width: Option<usize>,
+    height: Option<usize>,
+}
+
+impl Bounds for RestrictedBoard {
+    fn new(width: Option<usize>, height: Option<usize>) -> RestrictedBoard {
+        RestrictedBoard {width: width, height: height}
+    }
+    fn width(&self) -> Option<usize> {
+        self.width
+    }
+    fn height(&self) -> Option<usize> {
+        self.height
+    }
+}
+
+impl Bounds for InfBoard {
+    fn new(width: Option<usize>, height: Option<usize>) -> InfBoard {
+        InfBoard {width: width, height: height}
+    }
+    fn width(&self) -> Option<usize> {
+        None
+    }
+    fn height(&self) -> Option<usize> {
+        None
+    }
+}
+
+impl<T: Bounds> Board<T> {
+
+    pub fn new(width: usize, height: usize) -> Board<T> {
 
         // minimum board size is 1x1
         let cols = max(width, 1);
         let rows = max(height, 1);
 
-        Board {cells: Board::allocate(cols, rows)}
+        Board {cells: Board::<T>::allocate(cols, rows),
+               bounds: T::new(Some(100), Some(100))}
 
     }
 
@@ -144,9 +186,9 @@ impl Board {
 
 }
 
-impl<'a> IntoIterator for &'a Board {
+impl<'a, T: Bounds> IntoIterator for &'a Board<T> {
     type Item = CellDesc;
-    type IntoIter = BoardIntoIterator<'a>;
+    type IntoIter = BoardIntoIterator<'a, T>;
 
     fn into_iter(self) -> Self::IntoIter {
         let row = -(self.cells.len_neg() as isize);
@@ -158,14 +200,14 @@ impl<'a> IntoIterator for &'a Board {
 
 }
 
-pub struct BoardIntoIterator<'a> {
-    board: &'a Board,
+pub struct BoardIntoIterator<'a, T: Bounds + 'a> {
+    board: &'a Board<T>,
     row: isize,
     col: isize,
     cell_iter: Box<Iterator<Item=&'a Cell> + 'a>,
 }
 
-impl<'a> Iterator for BoardIntoIterator<'a> {
+impl<'a, T: Bounds> Iterator for BoardIntoIterator<'a, T> {
 
     type Item = CellDesc;
 
@@ -209,7 +251,7 @@ impl<'a> Iterator for BoardIntoIterator<'a> {
     }
 }
 
-impl ToString for Board {
+impl<T: Bounds> ToString for Board<T> {
     fn to_string(&self) -> String {
 
         let mut output = String::new();
