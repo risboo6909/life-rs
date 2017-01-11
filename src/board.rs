@@ -3,9 +3,12 @@
 /// will behave like a torus), otherwise it will expand "forever" consuming memory :]
 ///
 /// ```
-/// let mut my_board = Board::new(5, 5);
+/// let mut my_board = Board::new(Some(30), Some(30));
 /// my_board.born_at(20, 20);
 /// ```
+/// Example above will create a board with maximum height and width
+/// equal to 30, so it will contain 900 cells.
+///
 /// In fact, board of any size can be created and it will expand on demand,
 /// therefor it is recommended to initially create smallest board which
 /// will contain initial configuration.
@@ -33,9 +36,8 @@ pub struct CellDesc {
     pub new_line: bool,
 }
 
-pub struct Board<T: Bounds> {
+pub struct Board {
     cells: SymVec<SymVec<Cell>>,
-    bounds: T,
 }
 
 pub trait Bounds {
@@ -44,51 +46,11 @@ pub trait Bounds {
     fn height(&self) -> Option<usize>;
 }
 
-pub struct RestrictedBoard {
-    width: Option<usize>,
-    height: Option<usize>,
-}
+impl Board {
 
-pub struct InfBoard {
-    width: Option<usize>,
-    height: Option<usize>,
-}
-
-impl Bounds for RestrictedBoard {
-    fn new(width: Option<usize>, height: Option<usize>) -> RestrictedBoard {
-        RestrictedBoard {width: width, height: height}
-    }
-    fn width(&self) -> Option<usize> {
-        self.width
-    }
-    fn height(&self) -> Option<usize> {
-        self.height
-    }
-}
-
-impl Bounds for InfBoard {
-    fn new(width: Option<usize>, height: Option<usize>) -> InfBoard {
-        InfBoard {width: width, height: height}
-    }
-    fn width(&self) -> Option<usize> {
-        None
-    }
-    fn height(&self) -> Option<usize> {
-        None
-    }
-}
-
-impl<T: Bounds> Board<T> {
-
-    pub fn new(width: usize, height: usize) -> Board<T> {
-
-        // minimum board size is 1x1
-        let cols = max(width, 1);
-        let rows = max(height, 1);
-
-        Board {cells: Board::<T>::allocate(cols, rows),
-               bounds: T::new(Some(100), Some(100))}
-
+    pub fn new(width: Option<usize>, height: Option<usize>) -> Board {
+        // initially we allocate 2x2 board extending it on demand
+        Board { cells: Board::allocate(2, 2) }
     }
 
     fn allocate(cols: usize, rows: usize) -> SymVec<SymVec<Cell>> {
@@ -106,9 +68,44 @@ impl<T: Bounds> Board<T> {
         tmp
     }
 
+    fn cycle(x: isize, min_val: isize, max_val: isize) -> isize {
+
+        // TODO: add description
+
+        let cnt = max_val - min_val;
+
+        if cnt == 0 {
+            panic!("Interval can't be empty");
+        }
+
+        if cnt < 0 {
+            panic!("Interval can't be negative");
+        }
+
+        if x < min_val {
+            max_val - (min_val - x) % (cnt + 1)
+        } else if x > max_val - 1 {
+            min_val + (x - max_val) % cnt
+        } else {
+            x
+        }
+
+    }
+
+    //fn transform_coords(&self, col: isize, row: isize) {
+    //    match(self.height) {
+    //        Some(x) => {
+    //            if self.cells.len() >= x {
+    //
+    //            }
+    //        }
+    //    }
+    //}
+
     pub fn ensure_cell(&mut self, col: isize, row: isize) {
 
         // extend board by any number of cells if needed
+        // try to maintain borders
 
         if row >= 0 {
             while self.cells.need_extend_pos(row) {
@@ -133,6 +130,7 @@ impl<T: Bounds> Board<T> {
     }
 
     pub fn born_at(&mut self, col: isize, row: isize) {
+
         self.ensure_cell(col, row);
 
         // we must allocate 8 cells around current cell because
@@ -149,6 +147,7 @@ impl<T: Bounds> Board<T> {
         self.ensure_cell(col - 1, row + 1);
 
         self.cells[row][col] = Cell::Occupied;
+
     }
 
     pub fn kill_at(&mut self, col: isize, row: isize) {
@@ -169,7 +168,9 @@ impl<T: Bounds> Board<T> {
     }
 
     pub fn get_vicinity(&self, col: isize, row: isize) -> Vec<bool> {
+
         // get contents of 8 neighbours of a given cell
+
         let neighbours = vec![
             self.is_alive(col - 1, row),
             self.is_alive(col - 1, row - 1),
@@ -186,9 +187,9 @@ impl<T: Bounds> Board<T> {
 
 }
 
-impl<'a, T: Bounds> IntoIterator for &'a Board<T> {
+impl<'a> IntoIterator for &'a Board {
     type Item = CellDesc;
-    type IntoIter = BoardIntoIterator<'a, T>;
+    type IntoIter = BoardIntoIterator<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
         let row = -(self.cells.len_neg() as isize);
@@ -200,14 +201,14 @@ impl<'a, T: Bounds> IntoIterator for &'a Board<T> {
 
 }
 
-pub struct BoardIntoIterator<'a, T: Bounds + 'a> {
-    board: &'a Board<T>,
+pub struct BoardIntoIterator<'a> {
+    board: &'a Board,
     row: isize,
     col: isize,
     cell_iter: Box<Iterator<Item=&'a Cell> + 'a>,
 }
 
-impl<'a, T: Bounds> Iterator for BoardIntoIterator<'a, T> {
+impl<'a> Iterator for BoardIntoIterator<'a> {
 
     type Item = CellDesc;
 
@@ -237,9 +238,8 @@ impl<'a, T: Bounds> Iterator for BoardIntoIterator<'a, T> {
                     self.cell_iter.next();
 
                     Some(CellDesc { coord: Coord{col: self.col, row: self.row },
-                                  is_alive: self.board.is_alive(self.col, self.row),
-                                  new_line: true})
-
+                                    is_alive: self.board.is_alive(self.col, self.row),
+                                    new_line: true })
                 } else {
                     None
                 }
@@ -251,7 +251,7 @@ impl<'a, T: Bounds> Iterator for BoardIntoIterator<'a, T> {
     }
 }
 
-impl<T: Bounds> ToString for Board<T> {
+impl ToString for Board {
     fn to_string(&self) -> String {
 
         let mut output = String::new();
@@ -275,7 +275,7 @@ fn test_board_ok() {
 
     use std::collections::HashSet;
 
-    let mut my_board = Board::new(5, 5);
+    let mut my_board = Board::new(Some(5), Some(5));
 
     // set some existing cells
     my_board.born_at(0, 0);
@@ -309,7 +309,7 @@ fn test_board_ok() {
 #[test]
 fn test_board_iter() {
 
-    let mut my_board = Board::new(5, 5);
+    let mut my_board = Board::new(Some(5), Some(5));
 
     my_board.born_at(0, 0);
     my_board.born_at(1, 1);
@@ -330,7 +330,7 @@ fn test_board_iter() {
 
 #[test]
 fn test_glyder() {
-    let mut my_board = Board::new(5, 5);
+    let mut my_board = Board::new(Some(5), Some(5));
 
     my_board.born_at(0, 0);
     my_board.born_at(1, 1);
@@ -343,4 +343,36 @@ fn test_glyder() {
     assert_eq!(my_board.is_alive(1, 2), true);
     assert_eq!(my_board.is_alive(0, 2), true);
     assert_eq!(my_board.is_alive(-1, 2), true);
+}
+
+#[test]
+fn test_cycle() {
+
+    assert_eq!(Board::cycle(0, -5, 5), 0);
+    assert_eq!(Board::cycle(-5, -5, 5), -5);
+    assert_eq!(Board::cycle(5, -5, 5), -5);
+    assert_eq!(Board::cycle(6, -5, 5), -4);
+    assert_eq!(Board::cycle(-6, -5, 5), 4);
+    assert_eq!(Board::cycle(-7, -5, 5), 3);
+
+    assert_eq!(Board::cycle(0, 0, 5), 0);
+    assert_eq!(Board::cycle(-1, 0, 5), 4);
+    assert_eq!(Board::cycle(-2, 0, 5), 3);
+    assert_eq!(Board::cycle(2, 0, 5), 2);
+    assert_eq!(Board::cycle(5, 0, 5), 0);
+    assert_eq!(Board::cycle(6, 0, 5), 1);
+
+    assert_eq!(Board::cycle(5, 5, 6), 5);
+    assert_eq!(Board::cycle(6, 5, 6), 5);
+    assert_eq!(Board::cycle(4, 5, 6), 5);
+
+    assert_eq!(Board::cycle(-5, -5, -4), -5);
+    assert_eq!(Board::cycle(-4, -5, -4), -5);
+    assert_eq!(Board::cycle(-6, -5, -4), -5);
+
+}
+
+#[test]
+fn test_restricted_board() {
+    let mut my_board = Board::new(Some(5), Some(5));
 }

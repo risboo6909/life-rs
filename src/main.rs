@@ -14,6 +14,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::time::{Instant, Duration};
 
+
 #[derive(PartialEq)]
 enum State {
     Working,
@@ -46,7 +47,7 @@ impl Game {
         .build()
         .unwrap();
 
-        let mut game_board = Board::new(1, 1);
+        let mut game_board = Board::new(Some(100), Some(100));
 
         Game {
               width: width,
@@ -77,7 +78,7 @@ impl Game {
                     if let Event::Render(_) = e {
                         self.paint(&e);
                         if self.cur_state == State::Working {
-                            if Instant::now() - last_iter_time >= Duration::from_millis(20) {
+                            if Instant::now() - last_iter_time >= Duration::from_millis(5) {
                                 self.engine.one_iteration();
                                 last_iter_time = Instant::now();
                             }

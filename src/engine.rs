@@ -1,14 +1,14 @@
 use ::board::Board;
-use ::board::{Coord, CellDesc, RestrictedBoard};
+use ::board::{Coord, CellDesc};
 
 
 pub struct Engine {
-    pub board: Board<RestrictedBoard>,
+    pub board: Board,
 }
 
 impl Engine {
 
-    pub fn new(new_board: Board<RestrictedBoard>) -> Self {
+    pub fn new(new_board: Board) -> Self {
         Engine {board: new_board}
     }
 
@@ -16,17 +16,17 @@ impl Engine {
 
     }
 
-    pub fn get_board(&self) -> &Board<RestrictedBoard> {
+    pub fn get_board(&self) -> &Board {
         &self.board
     }
 
-    pub fn get_board_mut(&mut self) -> &mut Board<RestrictedBoard> {
+    pub fn get_board_mut(&mut self) -> &mut Board {
         &mut self.board
     }
 
     pub fn one_iteration(&mut self) {
 
-        let mut next_gen = Board::new(1, 1);
+        let mut next_gen = Board::new(Some(100), Some(100));
 
         for CellDesc { coord, is_alive, .. } in self.board.into_iter() {
 
