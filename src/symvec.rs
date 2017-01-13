@@ -125,6 +125,22 @@ impl<T> SymVec<T> {
         -idx >= (self.len_neg() as isize) + 1
     }
 
+    pub fn need_extend_pos_cnt(&self, idx: isize) -> Option<usize> {
+        if self.need_extend_pos(idx - 1) {
+            Some((idx - (self.len_pos() as isize)) as usize)
+        } else {
+            None
+        }
+    }
+
+    pub fn need_extend_neg_cnt(&self, idx: isize) -> Option<usize> {
+        if self.need_extend_neg(idx) {
+            Some(-(idx + self.len_neg() as isize) as usize)
+        } else {
+            None
+        }
+    }
+
     pub fn is_available(&self, idx: isize) -> bool {
         if idx >= 0 {
             !self.need_extend_pos(idx)
@@ -177,6 +193,33 @@ fn test_extend()
 }
 
 #[test]
+fn test_need_extend_cnt() {
+
+    let mut v: SymVec<i32> = SymVec::new();
+
+    assert_eq!(v.need_extend_neg_cnt(-1), Some(1));
+    assert_eq!(v.need_extend_pos_cnt(0), None);
+
+    assert_eq!(v.need_extend_neg_cnt(-20), Some(20));
+    assert_eq!(v.need_extend_neg_cnt(15), None);
+    assert_eq!(v.need_extend_pos_cnt(15), Some(15));
+    assert_eq!(v.need_extend_pos_cnt(-20), None);
+
+    v.push_front(1);
+    assert_eq!(v.need_extend_pos_cnt(15), Some(14));
+
+    v.push_back(1);
+    assert_eq!(v.need_extend_neg_cnt(-20), Some(19));
+
+    assert_eq!(v.need_extend_neg_cnt(-2), Some(1));
+    assert_eq!(v.need_extend_neg_cnt(-1), None);
+
+    assert_eq!(v.need_extend_pos_cnt(2), Some(1));
+    assert_eq!(v.need_extend_pos_cnt(1), None);
+
+}
+
+#[test]
 fn test_iterator() {
 
     let mut v: SymVec<i32> = SymVec::new();
@@ -193,10 +236,4 @@ fn test_iterator() {
     assert!(*v2[3] == 2);
     assert!(*v2[4] == 3);
 
-}
-
-#[test]
-fn test_expand()
-{
-    let mut v: SymVec<i32> = SymVec::new();
 }
