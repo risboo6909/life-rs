@@ -38,19 +38,18 @@ pub struct CellDesc {
 
 pub struct Board {
     cells: SymVec<SymVec<Cell>>,
-}
-
-pub trait Bounds {
-    fn new(width: Option<usize>, height: Option<usize>) -> Self;
-    fn width(&self) -> Option<usize>;
-    fn height(&self) -> Option<usize>;
+    half_width: Option<isize>,
+    half_height: Option<isize>,
 }
 
 impl Board {
 
     pub fn new(width: Option<usize>, height: Option<usize>) -> Board {
         // initially we allocate 2x2 board extending it on demand
-        Board { cells: Board::allocate(2, 2) }
+        Board { cells: Board::allocate(2, 2),
+                half_width: width.map(|x| (x / 2) as isize),
+                half_height: height.map(|x| (x / 2) as isize),
+              }
     }
 
     fn allocate(cols: usize, rows: usize) -> SymVec<SymVec<Cell>> {
@@ -92,20 +91,29 @@ impl Board {
 
     }
 
-    //fn transform_coords(&self, col: isize, row: isize) {
-    //    match(self.height) {
-    //        Some(x) => {
-    //            if self.cells.len() >= x {
-    //
-    //            }
-    //        }
-    //    }
-    //}
+    fn transform(size: Option<isize>, coord: isize) -> isize {
+        match size {
+            Some(x) => {
+                    if coord >= x || coord < -x {
+                        Board::cycle(coord, -x, x)
+                    } else { coord }
+                },
+            None => coord
+        }
+    }
+
+    fn transform_coords(&self, col: isize, row: isize) -> (isize, isize) {
+        let col = Board::transform(self.half_width, col);
+        let row = Board::transform(self.half_height, row);
+        (col, row)
+    }
 
     pub fn ensure_cell(&mut self, col: isize, row: isize) {
 
         // extend board by any number of cells if needed
         // try to maintain borders
+
+        let (col, row) = self.transform_coords(col, row);
 
         if row >= 0 {
             while self.cells.need_extend_pos(row) {
@@ -121,6 +129,7 @@ impl Board {
             while self.cells[row].need_extend_pos(col) {
                 self.cells[row].push_front(Cell::Empty);
             }
+
         } else {
             while self.cells[row].need_extend_neg(col) {
                 self.cells[row].push_back(Cell::Empty);
@@ -146,11 +155,14 @@ impl Board {
         self.ensure_cell(col, row + 1);
         self.ensure_cell(col - 1, row + 1);
 
+        let (col, row) = self.transform_coords(col, row);
+
         self.cells[row][col] = Cell::Occupied;
 
     }
 
     pub fn kill_at(&mut self, col: isize, row: isize) {
+        let (col, row) = self.transform_coords(col, row);
         self.cells[row][col] = Cell::Empty;
     }
 
@@ -160,6 +172,7 @@ impl Board {
 
     pub fn get_cell(&self, col: isize, row: isize) -> Cell {
         // if cell is not yet initialized it is considered as free
+        let (col, row) = self.transform_coords(col, row);
         if self.cells.is_available(row) && self.cells[row].is_available(col) {
             self.cells[row][col]
         } else {
@@ -273,9 +286,7 @@ impl ToString for Board {
 #[test]
 fn test_board_ok() {
 
-    use std::collections::HashSet;
-
-    let mut my_board = Board::new(Some(5), Some(5));
+    let mut my_board = Board::new(Some(10), Some(10));
 
     // set some existing cells
     my_board.born_at(0, 0);
@@ -300,16 +311,12 @@ fn test_board_ok() {
     my_board.kill_at(0, 0);
     assert_eq!(my_board.get_cell(0, 0), Cell::Empty);
 
-    let mut expected: HashSet<Coord> = HashSet::new();
-
-    expected.insert(Coord { col: 5, row: 2 });
-    expected.insert(Coord { col: 4, row: 4 });
 }
 
 #[test]
 fn test_board_iter() {
 
-    let mut my_board = Board::new(Some(5), Some(5));
+    let mut my_board = Board::new(Some(10), Some(10));
 
     my_board.born_at(0, 0);
     my_board.born_at(1, 1);
@@ -330,7 +337,7 @@ fn test_board_iter() {
 
 #[test]
 fn test_glyder() {
-    let mut my_board = Board::new(Some(5), Some(5));
+    let mut my_board = Board::new(Some(10), Some(10));
 
     my_board.born_at(0, 0);
     my_board.born_at(1, 1);
@@ -374,5 +381,11 @@ fn test_cycle() {
 
 #[test]
 fn test_restricted_board() {
-    let mut my_board = Board::new(Some(5), Some(5));
+    let mut my_board = Board::new(Some(10), Some(10));
+
+    my_board.born_at(5, 2);
+    assert_eq!(my_board.is_alive(-5, 2), true);
+
+    my_board.born_at(0, -7);
+    assert_eq!(my_board.is_alive(0, 3), true);
 }
