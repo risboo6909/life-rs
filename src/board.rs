@@ -245,7 +245,7 @@ impl<'a> Iterator for BoardIntoIterator<'a> {
                 if self.row < self.board.cells.len_pos() as isize - 1 {
 
                     self.row += 1;
-                    self.col = -(self.board.cells[self.row].len_neg() as isize) + 1;
+                    self.col = -(self.board.cells[self.row].len_neg() as isize);
 
                     self.cell_iter = Box::new(self.board.cells[self.row].into_iter());
                     self.cell_iter.next();
