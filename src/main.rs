@@ -206,7 +206,7 @@ impl Game {
                         if button == Button::Mouse(MouseButton::Left) {
                             if last_pos.is_some() {
                                 let pos = last_pos.unwrap();
-                                self.born_at(pos[0], pos[1]);
+                                self.born_or_kill(true, pos[0], pos[1]);
                                 self.cur_state = State::Paused;
                             }
                         }
@@ -214,7 +214,7 @@ impl Game {
 
                     else if let Some(pos) = e.mouse_cursor_args() {
                         if self.cur_state == State::Draw {
-                            self.born_at(pos[0], pos[1]);
+                            self.born_or_kill(false, pos[0], pos[1]);
                         }
                         last_pos = Some(pos);
                     }
@@ -227,10 +227,15 @@ impl Game {
         }
     }
 
-    fn born_at(&mut self, x: f64, y: f64) {
+    fn born_or_kill(&mut self, kill_alive: bool, x: f64, y: f64) {
         let (col, row) = self.to_logical(x, y);
         let board = self.engine.get_board_mut();
-        board.born_at(col, row);
+
+        if kill_alive && board.is_alive(col, row) {
+            board.kill_at(col, row)
+        } else {
+            board.born_at(col, row);
+        }
     }
 
     fn to_screen(&self, col: isize, row: isize) -> (f64, f64) {
@@ -287,6 +292,10 @@ impl Game {
                     rectangle([0.5, 1.0, 0.0, 0.3],
                               [x, y, cell_width, cell_height],
                                c.transform, g);
+
+                    // draw borders
+                    //rectangle([1.0, 1.0, 1.0, 0.3],
+                    //          [])
                 }
             }
 
