@@ -26,7 +26,7 @@ impl Engine {
 
     pub fn one_iteration(&mut self) {
 
-        let mut next_gen = Board::new(Some(100), Some(100));
+        let mut next_gen = Board::new(Some(200), Some(200));
 
         for CellDesc { coord, is_alive, .. } in self.board.into_iter() {
 
@@ -37,6 +37,7 @@ impl Engine {
             let neighbours = self.board.get_vicinity(col, row);
 
             if is_alive {
+
                 let neighbours_cnt = neighbours.into_iter().filter(|&x| x).count();
                 // any live cell with fewer than two live neighbours dies,
                 // as if caused by underpopulation.
