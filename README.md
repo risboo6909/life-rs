@@ -12,7 +12,7 @@ Eaxmple:
 
 ```./life-rs --width=100 --height=100``` 
 
-Starts program with board size of width 100 and height 100, if no width or height specified the board will be infinite in that dimension. 
+Starts program with board of width 100 and height 100, if no width or height specified the board will be infinite in that dimension. 
 
 ## Controls
 
