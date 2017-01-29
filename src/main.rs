@@ -174,6 +174,9 @@ impl Game {
 
                         Event::Render(args) => {
                             gl.draw(args.viewport(), |c, g| self.paint(c, g));
+                        }
+
+                        Event::Update(args) => {
                             if self.cur_state == State::Working {
                                 if Instant::now() - last_iter_time >= Duration::from_millis(10) {
                                     self.engine.one_iteration();
