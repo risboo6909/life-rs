@@ -4,4 +4,6 @@ version = "0.1.0"
 authors = ["risboo6909 <ttyv00@gmail.com"]
 
 [dependencies]
-piston_window = "0.59.0"
+piston_window = "0.60.0"
+piston2d-opengl_graphics = "0.36.1"
+find_folder = "*"
