@@ -18,6 +18,10 @@ Starts program with infinite board.
 
 Starts program with board of width 100 and height 100, if no width or height specified the board will be infinite in that dimension.
 
+`./life-rs --file file_name`
+
+Starts program with initial board configuration from file `file_name`
+
 ## Controls
 
 | Key | Action |
