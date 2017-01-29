@@ -4,16 +4,24 @@ use ::board::{Coord, CellDesc};
 
 pub struct Engine {
     pub board: Board,
+    pub iteration: usize,
 }
 
 impl Engine {
 
     pub fn new(new_board: Board) -> Self {
-        Engine {board: new_board}
+        Engine  {
+                    board: new_board,
+                    iteration: 0
+                }
     }
 
     pub fn from_file() {
 
+    }
+
+    pub fn cur_iteration(&self) -> usize {
+        self.iteration
     }
 
     pub fn get_board(&self) -> &Board {
@@ -64,6 +72,7 @@ impl Engine {
         }
 
         self.board = next_gen;
+        self.iteration += 1;
 
     }
 
