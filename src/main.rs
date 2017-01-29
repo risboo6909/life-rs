@@ -12,7 +12,7 @@ mod engine;
 use find_folder::Search;
 use piston_window::{OpenGL, Context, text, clear, rectangle, Transformed, Event, Button, Input,
                     MouseButton, Key, MouseCursorEvent, ReleaseEvent,
-                    PressEvent, PistonWindow, WindowSettings};
+                    PressEvent, PistonWindow, WindowSettings, Motion};
 
 use opengl_graphics::GlGraphics;
 use opengl_graphics::glyph_cache::GlyphCache;
@@ -170,90 +170,91 @@ impl Game {
 
                 Some(e) => {
 
-                    if let Event::Render(args) = e {
-                        gl.draw(args.viewport(), |c, g| self.paint(c, g));
-                        //self.paint(&e);
-                        if self.cur_state == State::Working {
-                            if Instant::now() - last_iter_time >= Duration::from_millis(50) {
-                                self.engine.one_iteration();
-                                last_iter_time = Instant::now();
+                    match e {
+
+                        Event::Render(args) => {
+                            gl.draw(args.viewport(), |c, g| self.paint(c, g));
+                            if self.cur_state == State::Working {
+                                if Instant::now() - last_iter_time >= Duration::from_millis(10) {
+                                    self.engine.one_iteration();
+                                    last_iter_time = Instant::now();
+                                }
                             }
                         }
-                    }
 
-                    if let Some(Button::Keyboard(Key::P)) = e.press_args() {
-                        if self.cur_state == State::Working {
-                            self.cur_state = State::Paused;
-                        } else {
-                            self.cur_state = State::Working;
+                        Event::Input(Input::Press(Button::Keyboard(Key::P))) => {
+                            if self.cur_state == State::Working {
+                                self.cur_state = State::Paused;
+                            } else {
+                                self.cur_state = State::Working;
+                            }
                         }
-                    }
 
-                    else if let Some(Button::Keyboard(Key::Right)) = e.press_args() {
-                        self.cam.move_right(self.move_step);
-                        self.move_step *= self.acceleration;
-                    }
-
-                    else if let Some(Button::Keyboard(Key::Right)) = e.release_args() {
-                        self.move_step = 1.0
-                    }
-
-                    else if let Some(Button::Keyboard(Key::Left)) = e.press_args() {
-                        self.cam.move_left(self.move_step);
-                        self.move_step *= self.acceleration;
-                    }
-
-                    else if let Some(Button::Keyboard(Key::Left)) = e.release_args() {
-                        self.move_step = 1.0
-                    }
-
-                    else if let Some(Button::Keyboard(Key::Up)) = e.press_args() {
-                        self.cam.move_up(self.move_step);
-                        self.move_step *= self.acceleration;
-                    }
-
-                    else if let Some(Button::Keyboard(Key::Up)) = e.release_args() {
-                        self.move_step = 1.0
-                    }
-
-                    else if let Some(Button::Keyboard(Key::Down)) = e.press_args() {
-                        self.cam.move_down(self.move_step);
-                        self.move_step *= self.acceleration;
-                    }
-
-                    else if let Some(Button::Keyboard(Key::Down)) = e.release_args() {
-                        self.move_step = 1.0
-                    }
-
-                    else if let Some(Button::Keyboard(Key::NumPadMinus)) = e.press_args() {
-                        self.cam.zoom_out(0.1);
-                    }
-
-                    else if let Some(Button::Keyboard(Key::NumPadPlus)) = e.press_args() {
-                        self.cam.zoom_in(self.move_step);
-                    }
-
-                    else if let Some(button) = e.press_args() {
-                        if button == Button::Mouse(MouseButton::Left) {
-                            self.cur_state = State::Draw;
-                        }
-                    }
-
-                    else if let Some(button) = e.release_args() {
-                        if button == Button::Mouse(MouseButton::Left) {
+                        Event::Input(Input::Release(Button::Mouse(MouseButton::Left))) => {
                             if last_pos.is_some() {
                                 let pos = last_pos.unwrap();
                                 self.born_or_kill(true, pos[0], pos[1]);
                                 self.cur_state = State::Paused;
                             }
                         }
-                    }
 
-                    else if let Some(pos) = e.mouse_cursor_args() {
-                        if self.cur_state == State::Draw {
-                            self.born_or_kill(false, pos[0], pos[1]);
+                        Event::Input(Input::Move(Motion::MouseCursor(x, y))) => {
+                            if self.cur_state == State::Draw {
+                                self.born_or_kill(false, x, y);
+                            }
+                            last_pos = Some([x, y]);
                         }
-                        last_pos = Some(pos);
+
+                        Event::Input(Input::Press(Button::Keyboard(Key::Right))) => {
+                            self.cam.move_right(self.move_step);
+                            self.move_step *= self.acceleration;
+                        }
+
+                        Event::Input(Input::Release(Button::Keyboard(Key::Right))) => {
+                            self.move_step = 1.0;
+                        }
+
+                        Event::Input(Input::Press(Button::Keyboard(Key::Left))) => {
+                            self.cam.move_left(self.move_step);
+                            self.move_step *= self.acceleration;
+                        }
+
+                        Event::Input(Input::Release(Button::Keyboard(Key::Left))) => {
+                            self.move_step = 1.0;
+                        }
+
+                        Event::Input(Input::Press(Button::Keyboard(Key::Up))) => {
+                            self.cam.move_up(self.move_step);
+                            self.move_step *= self.acceleration;
+                        }
+
+                        Event::Input(Input::Release(Button::Keyboard(Key::Up))) => {
+                            self.move_step = 1.0;
+                        }
+
+                        Event::Input(Input::Press(Button::Keyboard(Key::Down))) => {
+                            self.cam.move_down(self.move_step);
+                            self.move_step *= self.acceleration;
+                        }
+
+                        Event::Input(Input::Release(Button::Keyboard(Key::Down))) => {
+                            self.move_step = 1.0;
+                        }
+
+                        Event::Input(Input::Press(Button::Keyboard(Key::NumPadMinus))) => {
+                            self.cam.zoom_out(0.1);
+                        }
+
+                        Event::Input(Input::Press(Button::Keyboard(Key::NumPadPlus))) => {
+                            self.cam.zoom_in(self.move_step);
+                        }
+
+                        Event::Input(Input::Press(Button::Mouse(MouseButton::Left))) => {
+                            self.cur_state = State::Draw;
+                        }
+
+                        _ => {}
+
                     }
 
                 }
@@ -261,6 +262,7 @@ impl Game {
                 None => break
 
             }
+
         }
     }
 
