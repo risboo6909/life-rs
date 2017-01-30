@@ -45,7 +45,7 @@ pub struct Board {
 impl Board {
 
     pub fn new(width: Option<usize>, height: Option<usize>) -> Board {
-        // initially we allocate 2x2 board extending it on demand
+        // initially we allocate 2x2 board and extend it on demand
         Board { cells: Board::allocate(2, 2),
                 half_width: width.map(|x| (x / 2) as isize),
                 half_height: height.map(|x| (x / 2) as isize),
@@ -67,19 +67,14 @@ impl Board {
         tmp
     }
 
+    #[inline]
     fn cycle(x: isize, min_val: isize, max_val: isize) -> isize {
 
         // TODO: add description
 
         let cnt = max_val - min_val;
 
-        if cnt == 0 {
-            panic!("Interval can't be empty");
-        }
-
-        if cnt < 0 {
-            panic!("Interval can't be negative");
-        }
+        assert!(cnt > 0);
 
         if x < min_val {
             max_val - (min_val - x) % (cnt + 1)
@@ -91,34 +86,47 @@ impl Board {
 
     }
 
-    fn transform(size: Option<isize>, coord: isize) -> isize {
+    #[inline]
+    fn bound_coordinate(size: Option<isize>, coord: isize) -> isize {
+
         match size {
+
             Some(x) => {
                     if coord >= x || coord < -x {
                         Board::cycle(coord, -x, x)
                     } else { coord }
                 },
+
             None => coord
+
         }
+
     }
 
-    fn transform_coords(&self, col: isize, row: isize) -> (isize, isize) {
-        let col = Board::transform(self.half_width, col);
-        let row = Board::transform(self.half_height, row);
+    #[inline]
+    fn constrain_board(&self, col: isize, row: isize) -> (isize, isize) {
+
+        // ensure cell coordinates lie inside limits
+
+        let col = Board::bound_coordinate(self.half_width, col);
+        let row = Board::bound_coordinate(self.half_height, row);
+
         (col, row)
+
     }
 
     pub fn ensure_cell(&mut self, col: isize, row: isize) {
 
         // extend board by any number of cells if needed
-        // try to maintain borders
+        // maintain them inside board limits
 
-        let (col, row) = self.transform_coords(col, row);
+        let (col, row) = self.constrain_board(col, row);
 
         if row >= 0 {
             while self.cells.need_extend_pos(row) {
                 self.cells.push_front(SymVec::new());
             }
+
         } else {
             while self.cells.need_extend_neg(row) {
                 self.cells.push_back(SymVec::new());
@@ -155,14 +163,14 @@ impl Board {
         self.ensure_cell(col, row + 1);
         self.ensure_cell(col - 1, row + 1);
 
-        let (col, row) = self.transform_coords(col, row);
+        let (col, row) = self.constrain_board(col, row);
 
         self.cells[row][col] = Cell::Occupied;
 
     }
 
     pub fn kill_at(&mut self, col: isize, row: isize) {
-        let (col, row) = self.transform_coords(col, row);
+        let (col, row) = self.constrain_board(col, row);
         self.cells[row][col] = Cell::Empty;
     }
 
@@ -171,13 +179,16 @@ impl Board {
     }
 
     pub fn get_cell(&self, col: isize, row: isize) -> Cell {
+
         // if cell is not yet initialized it is considered as free
-        let (col, row) = self.transform_coords(col, row);
+
+        let (col, row) = self.constrain_board(col, row);
         if self.cells.is_available(row) && self.cells[row].is_available(col) {
             self.cells[row][col]
         } else {
             Cell::Empty
         }
+
     }
 
     pub fn get_vicinity(&self, col: isize, row: isize) -> Vec<bool> {
@@ -201,6 +212,7 @@ impl Board {
 }
 
 impl<'a> IntoIterator for &'a Board {
+
     type Item = CellDesc;
     type IntoIter = BoardIntoIterator<'a>;
 

@@ -21,7 +21,9 @@ pub struct SymVec<T> {
 }
 
 impl<T> Index<isize> for SymVec<T> {
+
     type Output = T;
+
     fn index(&self, idx: isize) -> &T {
         if idx < 0 {
             let abs_idx = -(1 + idx) as usize;
@@ -42,6 +44,7 @@ impl<T> Index<isize> for SymVec<T> {
 }
 
 impl<T> IndexMut<isize> for SymVec<T> {
+
     fn index_mut<'a>(&'a mut self, idx: isize) -> &'a mut T {
         if idx < 0 {
             let abs_idx = -(1 + idx) as usize;
@@ -58,15 +61,18 @@ impl<T> IndexMut<isize> for SymVec<T> {
             &mut self.vec_pos[abs_idx]
         }
     }
+
 }
 
 impl<'a, T: 'a> IntoIterator for &'a SymVec<T> {
+
     type Item = &'a T;
     type IntoIter = SymVecIntoIterator<'a, T>;
 
     fn into_iter(self) -> Self::IntoIter {
         SymVecIntoIterator{symvec: self, idx: -(self.len_neg() as isize) - 1}
     }
+
 }
 
 pub struct SymVecIntoIterator<'a, T: 'a> {
