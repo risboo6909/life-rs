@@ -112,7 +112,6 @@ impl Board {
         let row = Board::bound_coordinate(self.half_height, row);
 
         (col, row)
-
     }
 
     pub fn ensure_cell(&mut self, col: isize, row: isize) {

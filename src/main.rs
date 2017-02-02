@@ -10,7 +10,8 @@ mod board;
 mod engine;
 
 use find_folder::Search;
-use piston_window::{OpenGL, Context, text, clear, rectangle, Transformed, Event, Button, Input,
+use piston_window::{OpenGL, Context, text, clear, rectangle, line,
+                    Transformed, Event, Button, Input,
                     MouseButton, Key, MouseCursorEvent, ReleaseEvent,
                     PressEvent, PistonWindow, WindowSettings, Motion};
 
@@ -60,8 +61,16 @@ impl Cam {
         (x + self.x, y + self.y)
     }
 
+    fn translate_inv(&self, x: f64, y: f64) -> (f64, f64) {
+        (x - self.x, y - self.y)
+    }
+
     fn scale(&self, width: f64, height: f64) -> (f64, f64) {
         (self.scale * width, self.scale * height)
+    }
+
+    fn scale_inv(&self, width: f64, height: f64) -> (f64, f64) {
+        ((1.0/self.scale) * width, (1.0/self.scale) * height)
     }
 
     fn zoom_out(&mut self, k: f64) {
@@ -93,15 +102,16 @@ impl Cam {
 
 struct Game {
 
-    width: u32,
-    height: u32,
+    width: f64,
+    height: f64,
 
     cell_width: f64,
     cell_height: f64,
 
     move_step: f64,
-
     acceleration: f64,
+
+    show_grid: bool,
 
     window: Rc<RefCell<PistonWindow>>,
     engine: Engine,
@@ -113,11 +123,11 @@ struct Game {
 
 impl Game {
 
-    fn new(width: u32, height: u32) -> Game {
+    fn new(width: f64, height: f64) -> Game {
 
         let mut window: PistonWindow = WindowSettings::new(
             "My Rust Life",
-            [width, height]
+            [width as u32, height as u32]
         ).opengl(OPENGL)
          .samples(8)
          .exit_on_esc(true)
@@ -131,14 +141,18 @@ impl Game {
 
         Game {
 
+                // window width and height in pixels
                 width: width,
                 height: height,
 
+                // cell and width of a cell in pixels
                 cell_width: 10.0,
                 cell_height: 10.0,
 
                 acceleration: 1.4,
                 move_step: 1.0,
+
+                show_grid: true,
 
                 window: Rc::new(RefCell::new(window)),
                 engine: Engine::new(game_board),
@@ -186,6 +200,7 @@ impl Game {
                         }
 
                         Event::Input(Input::Press(Button::Keyboard(Key::P))) => {
+                            // pause/unpause
                             if self.cur_state == State::Working {
                                 self.cur_state = State::Paused;
                             } else {
@@ -193,17 +208,24 @@ impl Game {
                             }
                         }
 
+                        Event::Input(Input::Press(Button::Keyboard(Key::G))) => {
+                            // show/hide grid
+                            self.show_grid = !self.show_grid;
+                        }
+
                         Event::Input(Input::Release(Button::Mouse(MouseButton::Left))) => {
                             if last_pos.is_some() {
                                 let pos = last_pos.unwrap();
-                                self.born_or_kill(true, pos[0], pos[1]);
+                                let (t_x, t_y) = self.cam.translate_inv(pos[0], pos[1]);
+                                self.born_or_kill(true, t_x, t_y);
                                 self.cur_state = State::Paused;
                             }
                         }
 
                         Event::Input(Input::Move(Motion::MouseCursor(x, y))) => {
                             if self.cur_state == State::Draw {
-                                self.born_or_kill(false, x, y);
+                                let (t_x, t_y) = self.cam.translate_inv(x, y);
+                                self.born_or_kill(false, t_x, t_y);
                             }
                             last_pos = Some([x, y]);
                         }
@@ -248,7 +270,7 @@ impl Game {
                             self.cam.zoom_out(0.1);
                         }
 
-                        Event::Input(Input::Press(Button::Keyboard(Key::NumPadPlus))) => {
+                        Event::Input(Input::Press(Button::Keyboard(Key::Z))) => {
                             self.cam.zoom_in(self.move_step);
                         }
 
@@ -281,16 +303,27 @@ impl Game {
     }
 
     fn to_screen(&self, col: isize, row: isize) -> (f64, f64) {
+
         let (cell_width, cell_height) = self.cam.scale(self.cell_width,
                                                        self.cell_height);
-        let x = col as f64 * cell_width + (0.5 * self.width as f64) - 5.0;
-        let y = row as f64 * cell_height + (0.5 * self.height as f64) - 5.0;
+
+        let half_cell_width = 0.5 * cell_width;
+        let half_cell_height = 0.5 * cell_height;
+
+        let x = col as f64 * cell_width + (0.5 * self.width) - half_cell_width;
+        let y = row as f64 * cell_height + (0.5 * self.height) - half_cell_height;
+
         self.cam.translate(x, y)
+
     }
 
     fn to_logical(&self, x: f64, y: f64) -> (isize, isize) {
-        let mut offset_x = x - 0.5 * (self.width as f64);
-        let mut offset_y = y - 0.5 * (self.height as f64);
+
+        let (cell_width, cell_height) = self.cam.scale(self.cell_width,
+                                                       self.cell_height);
+
+        let mut offset_x = x - 0.5 * self.width;
+        let mut offset_y = y - 0.5 * self.height;
 
         if offset_x < 0.0 {
             offset_x -= 5.0;
@@ -304,9 +337,47 @@ impl Game {
             offset_y += 5.0;
         }
 
-        let col = (offset_x / self.cell_width) as isize;
-        let row = (offset_y / self.cell_height) as isize;
+
+        let col = (offset_x / cell_width) as isize;
+        let row = (offset_y / cell_height) as isize;
+
         (col, row)
+
+    }
+
+    fn draw_grid(&self, c: &Context, g: &mut GlGraphics) {
+
+        let (grid_width, grid_height) = self.cam.scale(self.cell_width,
+                                                       self.cell_height);
+
+        let offset_x = (grid_width - (0.5 * self.width % grid_width)) - 0.5 * grid_width;
+        let offset_y = (grid_height - (0.5 * self.height % grid_height)) - 0.5 * grid_height;
+
+        let mut x = self.cam.x - offset_x;
+        let mut y = self.cam.y - offset_y;
+
+        // horizontal lines
+        while y < self.height as f64 {
+
+            line([100.0, 100.0, 100.0, 1.0], 0.09,
+                 [0.0, y, self.width, y],
+                  c.transform, g);
+
+            y += grid_height;
+
+        }
+
+        // vertical lines
+        while x < self.width as f64 {
+
+            line([100.0, 100.0, 100.0, 1.0], 0.09,
+                 [x, 0.0, x, self.height],
+                 c.transform, g);
+
+            x += grid_height;
+
+        }
+
     }
 
     fn paint(&mut self, c: Context, g: &mut GlGraphics) {
@@ -338,7 +409,12 @@ impl Game {
             }
         }
 
-        text([0.5, 1.0, 0.0, 0.3], 15, &format!("iteration {}", self.engine.cur_iteration()),
+        if self.show_grid {
+            self.draw_grid(&c, g);
+        }
+
+        text([0.5, 1.0, 0.0, 1.0], 15,
+             &format!("iteration {}", self.engine.cur_iteration()),
              &mut self.resources.font,
              c.trans(10.0, 20.0).transform, g);
 
@@ -349,7 +425,7 @@ impl Game {
 
 fn main() {
 
-    let mut game = Game::new(1024, 768);
+    let mut game = Game::new(1024.0, 768.0);
     game.event_dispatcher();
 
 }
