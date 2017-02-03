@@ -34,7 +34,7 @@ impl Engine {
 
     pub fn one_iteration(&mut self) {
 
-        let mut next_gen = Board::new(Some(200), Some(200));
+        let mut next_gen = Board::new(self.board.get_cols(), self.board.get_rows());
 
         for CellDesc { coord, is_alive, .. } in self.board.into_iter() {
 

@@ -38,8 +38,12 @@ pub struct CellDesc {
 
 pub struct Board {
     cells: SymVec<SymVec<Cell>>,
-    half_width: Option<isize>,
-    half_height: Option<isize>,
+
+    rows: Option<usize>,
+    cols: Option<usize>,
+
+    half_cols: Option<isize>,
+    half_rows: Option<isize>,
 }
 
 impl Board {
@@ -47,8 +51,10 @@ impl Board {
     pub fn new(width: Option<usize>, height: Option<usize>) -> Board {
         // initially we allocate 2x2 board and extend it on demand
         Board { cells: Board::allocate(2, 2),
-                half_width: width.map(|x| (x / 2) as isize),
-                half_height: height.map(|x| (x / 2) as isize),
+                cols: width,
+                rows: height,
+                half_cols: width.map(|x| (x / 2) as isize),
+                half_rows: height.map(|x| (x / 2) as isize),
               }
     }
 
@@ -108,8 +114,8 @@ impl Board {
 
         // ensure cell coordinates lie inside limits
 
-        let col = Board::bound_coordinate(self.half_width, col);
-        let row = Board::bound_coordinate(self.half_height, row);
+        let col = Board::bound_coordinate(self.half_cols, col);
+        let row = Board::bound_coordinate(self.half_rows, row);
 
         (col, row)
     }
@@ -168,11 +174,13 @@ impl Board {
 
     }
 
+    #[inline]
     pub fn kill_at(&mut self, col: isize, row: isize) {
         let (col, row) = self.constrain_board(col, row);
         self.cells[row][col] = Cell::Empty;
     }
 
+    #[inline]
     pub fn is_alive(&self, col: isize, row: isize) -> bool {
         self.get_cell(col, row) != Cell::Empty
     }
@@ -206,6 +214,16 @@ impl Board {
         ];
 
         neighbours
+    }
+
+    #[inline]
+    pub fn get_cols(&self) -> Option<usize> {
+        self.cols
+    }
+
+    #[inline]
+    pub fn get_rows(&self) -> Option<usize> {
+        self.rows
     }
 
 }
