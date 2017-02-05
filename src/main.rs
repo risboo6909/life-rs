@@ -296,10 +296,10 @@ impl Game {
         // converts from logical board coordinates into screen coordinates
         // taking in account current camera position and scale
 
-        let x = col as f64 * self.cell.get_width(&self.cam) + (0.5 * self.width) -
+        let x = col as f64 * self.cell.get_width(&self.cam) + self.half_width -
             self.cell.get_half_width(&self.cam);
 
-        let y = row as f64 * self.cell.get_height(&self.cam) + (0.5 * self.height) -
+        let y = row as f64 * self.cell.get_height(&self.cam) + self.half_height -
             self.cell.get_half_height(&self.cam);
 
         self.cam.translate(x, y)
@@ -310,8 +310,8 @@ impl Game {
 
         let (x, y) = self.cam.translate_inv(x, y);
 
-        let mut offset_x = x - 0.5 * self.width;
-        let mut offset_y = y - 0.5 * self.height;
+        let mut offset_x = x - self.half_width;
+        let mut offset_y = y - self.half_height;
 
         if offset_x < 0.0 {
             offset_x -= self.cell.get_half_width(&self.cam);
@@ -333,45 +333,34 @@ impl Game {
     }
 
     #[inline]
-    fn get_right_border(&self) -> Option<f64> {
-        if let Some(cols) = self.engine.get_board().get_cols() {
-            return Some(self.cam.translate_x(self.half_width +
-                0.5 * cols as f64 * self.cell.get_width(&self.cam)))
-        }
-        None
+    fn get_right_border(&self, cols: usize) -> f64 {
+        self.cam.translate_x(self.half_width +
+                cols as f64 * self.cell.get_half_width(&self.cam))
+
     }
 
     #[inline]
-    fn get_left_border(&self) -> Option<f64> {
-        if let Some(cols) = self.engine.get_board().get_cols() {
-            return Some(self.cam.translate_x(self.half_width -
-                0.5 * cols as f64 * self.cell.get_width(&self.cam) - 1.0))
-        }
-        None
+    fn get_left_border(&self, cols: usize) -> f64 {
+        self.cam.translate_x(self.half_width -
+                cols as f64 * self.cell.get_half_width(&self.cam) - 1.0)
     }
 
     #[inline]
-    fn get_top_border(&self) -> Option<f64> {
-        if let Some(rows) = self.engine.get_board().get_rows() {
-            return Some(self.cam.translate_y(self.half_height +
-                0.5 * rows as f64 * self.cell.get_height(&self.cam)))
-        }
-        None
+    fn get_top_border(&self, rows: usize) -> f64 {
+        self.cam.translate_y(self.half_height +
+                rows as f64 * self.cell.get_half_height(&self.cam))
     }
 
     #[inline]
-    fn get_bottom_border(&self) -> Option<f64> {
-        if let Some(rows) = self.engine.get_board().get_rows() {
-            return Some(self.cam.translate_y(self.half_height -
-                0.5 * rows as f64 * self.cell.get_height(&self.cam) - 1.0))
-        }
-        None
+    fn get_bottom_border(&self, rows: usize) -> f64 {
+        return self.cam.translate_y(self.half_height -
+                rows as f64 * self.cell.get_half_height(&self.cam) - 1.0)
     }
 
     fn draw_grid(&self, c: &Context, g: &mut GlGraphics) {
 
-        let (grid_width, grid_height) = (self.cell.get_width(&self.cam),
-                                         self.cell.get_height(&self.cam));
+        let grid_width = self.cell.get_width(&self.cam);
+        let grid_height = self.cell.get_height(&self.cam);
 
         let offset_x = 0.5 * grid_width - 0.5 * self.width % grid_width;
         let offset_y = 0.5 * grid_height - 0.5 * self.height % grid_height;
@@ -409,7 +398,9 @@ impl Game {
 
         let board = self.engine.get_board();
 
-        if let Some(offset_x) = self.get_right_border() {
+        if let Some(cols) = self.engine.get_board().get_cols() {
+
+            let offset_x = self.get_right_border(cols);
 
             // draw right border
 
@@ -417,9 +408,7 @@ impl Game {
                  [offset_x, 0.0, offset_x, self.height],
                  c.transform, g);
 
-        }
-
-        if let Some(offset_x) = self.get_left_border() {
+            let offset_x = self.get_left_border(cols);
 
             // draw left border
 
@@ -430,16 +419,18 @@ impl Game {
         }
 
 
-        if let Some(offset_y) = self.get_top_border() {
+        if let Some(rows) = self.engine.get_board().get_rows() {
+
+            let offset_y = self.get_top_border(rows);
 
             // draw top border
 
             line(RED, 0.3,
                  [0.0, offset_y, self.width, offset_y],
                  c.transform, g);
-        }
 
-        if let Some(offset_y) = self.get_bottom_border() {
+
+            let offset_y = self.get_bottom_border(rows);
 
             // draw bottom border
 
