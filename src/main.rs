@@ -49,6 +49,39 @@ struct Resources {
 }
 
 
+struct CellProp {
+    cell_width: f64,
+    cell_height: f64,
+}
+
+impl CellProp {
+
+    pub fn new(cell_width: f64, cell_height: f64) -> Self {
+        CellProp {cell_width: cell_width, cell_height: cell_height}
+    }
+
+    #[inline]
+    pub fn get_width(&self, cam: &Cam) -> f64 {
+        self.cell_width * cam.get_scale()
+    }
+
+    #[inline]
+    pub fn get_height(&self, cam: &Cam) -> f64 {
+        self.cell_height * cam.get_scale()
+    }
+
+    #[inline]
+    pub fn get_half_width(&self, cam: &Cam) -> f64 {
+        0.5 * self.get_width(&cam)
+    }
+
+    #[inline]
+    pub fn get_half_height(&self, cam: &Cam) -> f64 {
+        0.5 * self.get_height(&cam)
+    }
+}
+
+
 struct Game {
 
     width: f64,
@@ -57,11 +90,7 @@ struct Game {
     half_width: f64,
     half_height: f64,
 
-    cell_width: f64,
-    cell_height: f64,
-
-    half_cell_width: f64,
-    half_cell_height: f64,
+    cell: CellProp,
 
     move_step: f64,
     acceleration: f64,
@@ -102,12 +131,7 @@ impl Game {
                 half_width: 0.5 * width,
                 half_height: 0.5 * height,
 
-                // cell and width of a cell in pixels
-                cell_width: 10.0,
-                cell_height: 10.0,
-
-                half_cell_width: 5.0,
-                half_cell_height: 5.0,
+                cell: CellProp::new(10.0, 10.0),
 
                 // scale coeff and move acceleration
                 acceleration: 1.4,
@@ -272,14 +296,11 @@ impl Game {
         // converts from logical board coordinates into screen coordinates
         // taking in account current camera position and scale
 
-        let (cell_width, cell_height) = self.cam.scale(self.cell_width,
-                                                       self.cell_height);
+        let x = col as f64 * self.cell.get_width(&self.cam) + (0.5 * self.width) -
+            self.cell.get_half_width(&self.cam);
 
-        let half_cell_width = 0.5 * cell_width;
-        let half_cell_height = 0.5 * cell_height;
-
-        let x = col as f64 * cell_width + (0.5 * self.width) - half_cell_width;
-        let y = row as f64 * cell_height + (0.5 * self.height) - half_cell_height;
+        let y = row as f64 * self.cell.get_height(&self.cam) + (0.5 * self.height) -
+            self.cell.get_half_height(&self.cam);
 
         self.cam.translate(x, y)
 
@@ -289,31 +310,23 @@ impl Game {
 
         let (x, y) = self.cam.translate_inv(x, y);
 
-        let (cell_width, cell_height) = self.cam.scale(self.cell_width,
-                                                       self.cell_height);
-
-        let (half_cell_width, half_cell_height) = self.cam.scale(self.half_cell_width,
-                                                                 self.half_cell_height);
-
-
         let mut offset_x = x - 0.5 * self.width;
         let mut offset_y = y - 0.5 * self.height;
 
         if offset_x < 0.0 {
-            offset_x -= half_cell_width;
+            offset_x -= self.cell.get_half_width(&self.cam);
         } else if offset_x > 0.0 {
-            offset_x += half_cell_width;
+            offset_x += self.cell.get_half_width(&self.cam);
         }
 
         if offset_y < 0.0 {
-            offset_y -= half_cell_height;
+            offset_y -= self.cell.get_half_height(&self.cam);
         } else if offset_y > 0.0 {
-            offset_y += half_cell_height;
+            offset_y += self.cell.get_half_height(&self.cam);
         }
 
-
-        let col = (offset_x / cell_width) as isize;
-        let row = (offset_y / cell_height) as isize;
+        let col = (offset_x / self.cell.get_width(&self.cam)) as isize;
+        let row = (offset_y / self.cell.get_height(&self.cam)) as isize;
 
         (col, row)
 
@@ -323,7 +336,7 @@ impl Game {
     fn get_right_border(&self) -> Option<f64> {
         if let Some(cols) = self.engine.get_board().get_cols() {
             return Some(self.cam.translate_x(self.half_width +
-                0.5 * cols as f64 * self.cell_width * self.cam.scale))
+                0.5 * cols as f64 * self.cell.get_width(&self.cam)))
         }
         None
     }
@@ -332,7 +345,7 @@ impl Game {
     fn get_left_border(&self) -> Option<f64> {
         if let Some(cols) = self.engine.get_board().get_cols() {
             return Some(self.cam.translate_x(self.half_width -
-                0.5 * cols as f64 * self.cell_width * self.cam.scale - 1.0))
+                0.5 * cols as f64 * self.cell.get_width(&self.cam) - 1.0))
         }
         None
     }
@@ -341,7 +354,7 @@ impl Game {
     fn get_top_border(&self) -> Option<f64> {
         if let Some(rows) = self.engine.get_board().get_rows() {
             return Some(self.cam.translate_y(self.half_height +
-                0.5 * rows as f64 * self.cell_height * self.cam.scale))
+                0.5 * rows as f64 * self.cell.get_height(&self.cam)))
         }
         None
     }
@@ -350,21 +363,21 @@ impl Game {
     fn get_bottom_border(&self) -> Option<f64> {
         if let Some(rows) = self.engine.get_board().get_rows() {
             return Some(self.cam.translate_y(self.half_height -
-                0.5 * rows as f64 * self.cell_height * self.cam.scale - 1.0))
+                0.5 * rows as f64 * self.cell.get_height(&self.cam) - 1.0))
         }
         None
     }
 
     fn draw_grid(&self, c: &Context, g: &mut GlGraphics) {
 
-        let (grid_width, grid_height) = self.cam.scale(self.cell_width,
-                                                       self.cell_height);
+        let (grid_width, grid_height) = (self.cell.get_width(&self.cam),
+                                         self.cell.get_height(&self.cam));
 
         let offset_x = (grid_width - (0.5 * self.width % grid_width)) - 0.5 * grid_width;
         let offset_y = (grid_height - (0.5 * self.height % grid_height)) - 0.5 * grid_height;
 
-        let mut x = self.cam.x - offset_x;
-        let mut y = self.cam.y - offset_y;
+        let mut x = self.cam.get_x() - offset_x;
+        let mut y = self.cam.get_y() - offset_y;
 
         // horizontal lines
         while y < self.height as f64 {
@@ -458,11 +471,9 @@ impl Game {
                 if is_alive {
 
                     let (x, y) = self.to_screen(coord.col, coord.row);
-
-                    let (cell_width, cell_height) = self.cam.scale(self.cell_width,
-                                                                   self.cell_height);
-
-                    rectangle(GREEN_TRNSP, [x, y, cell_width, cell_height],
+                    rectangle(GREEN_TRNSP, [x, y,
+                        self.cell.get_width(&self.cam),
+                        self.cell.get_height(&self.cam)],
                               c.transform, g);
                 }
 
