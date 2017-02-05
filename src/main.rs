@@ -60,6 +60,9 @@ struct Game {
     cell_width: f64,
     cell_height: f64,
 
+    half_cell_width: f64,
+    half_cell_height: f64,
+
     move_step: f64,
     acceleration: f64,
 
@@ -102,6 +105,9 @@ impl Game {
                 // cell and width of a cell in pixels
                 cell_width: 10.0,
                 cell_height: 10.0,
+
+                half_cell_width: 5.0,
+                half_cell_height: 5.0,
 
                 // scale coeff and move acceleration
                 acceleration: 1.4,
@@ -174,8 +180,7 @@ impl Game {
                         Event::Input(Input::Release(Button::Mouse(MouseButton::Left))) => {
                             if last_pos.is_some() {
                                 let pos = last_pos.unwrap();
-                                let t_pos = self.cam.translate_inv(pos[0], pos[1]);
-                                self.born_or_kill(true, t_pos.0, t_pos.1);
+                                self.born_or_kill(true, pos[0], pos[1]);
 
                                 self.cur_state = State::Paused;
                             }
@@ -183,8 +188,7 @@ impl Game {
 
                         Event::Input(Input::Move(Motion::MouseCursor(x, y))) => {
                             if self.cur_state == State::Draw {
-                                let pos = self.cam.translate_inv(x, y);
-                                self.born_or_kill(false, pos.0, pos.1);
+                                self.born_or_kill(false, x, y);
                             }
                             last_pos = Some([x, y]);
                         }
@@ -251,7 +255,9 @@ impl Game {
     }
 
     fn born_or_kill(&mut self, kill_alive: bool, x: f64, y: f64) {
+
         let (col, row) = self.to_logical(x, y);
+
         let board = self.engine.get_board_mut();
 
         if kill_alive && board.is_alive(col, row) {
@@ -281,22 +287,28 @@ impl Game {
 
     fn to_logical(&self, x: f64, y: f64) -> (isize, isize) {
 
+        let (x, y) = self.cam.translate_inv(x, y);
+
         let (cell_width, cell_height) = self.cam.scale(self.cell_width,
                                                        self.cell_height);
+
+        let (half_cell_width, half_cell_height) = self.cam.scale(self.half_cell_width,
+                                                                 self.half_cell_height);
+
 
         let mut offset_x = x - 0.5 * self.width;
         let mut offset_y = y - 0.5 * self.height;
 
         if offset_x < 0.0 {
-            offset_x -= 5.0;
+            offset_x -= half_cell_width;
         } else if offset_x > 0.0 {
-            offset_x += 5.0;
+            offset_x += half_cell_width;
         }
 
         if offset_y < 0.0 {
-            offset_y -= 5.0;
+            offset_y -= half_cell_height;
         } else if offset_y > 0.0 {
-            offset_y += 5.0;
+            offset_y += half_cell_height;
         }
 
 
