@@ -373,8 +373,8 @@ impl Game {
         let (grid_width, grid_height) = (self.cell.get_width(&self.cam),
                                          self.cell.get_height(&self.cam));
 
-        let offset_x = (grid_width - (0.5 * self.width % grid_width)) - 0.5 * grid_width;
-        let offset_y = (grid_height - (0.5 * self.height % grid_height)) - 0.5 * grid_height;
+        let offset_x = 0.5 * grid_width - 0.5 * self.width % grid_width;
+        let offset_y = 0.5 * grid_height - 0.5 * self.height % grid_height;
 
         let mut x = self.cam.get_x() - offset_x;
         let mut y = self.cam.get_y() - offset_y;
