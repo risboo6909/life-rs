@@ -27,11 +27,12 @@ pub struct Coord {
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum Cell {
     Empty,
-    Occupied
+    Occupied { gen: usize }
 }
 
 pub struct CellDesc {
     pub coord: Coord,
+    pub gen: usize,
     pub is_alive: bool,
     pub new_line: bool,
 }
@@ -49,6 +50,7 @@ pub struct Board {
 impl Board {
 
     pub fn new(width: Option<usize>, height: Option<usize>) -> Board {
+
         // initially we allocate 2x2 board and extend it on demand
         Board { cells: Board::allocate(2, 2),
                 cols: width,
@@ -56,6 +58,7 @@ impl Board {
                 half_cols: width.map(|x| (x / 2) as isize),
                 half_rows: height.map(|x| (x / 2) as isize),
               }
+
     }
 
     fn allocate(cols: usize, rows: usize) -> SymVec<SymVec<Cell>> {
@@ -151,7 +154,7 @@ impl Board {
 
     }
 
-    pub fn born_at(&mut self, col: isize, row: isize) {
+    pub fn born_at_gen(&mut self, col: isize, row: isize, gen: usize) {
 
         self.ensure_cell(col, row);
 
@@ -170,8 +173,12 @@ impl Board {
 
         let (col, row) = self.constrain_board(col, row);
 
-        self.cells[row][col] = Cell::Occupied;
+        self.cells[row][col] = Cell::Occupied { gen: gen };
 
+    }
+
+    pub fn born_at(&mut self, col: isize, row: isize) {
+        self.born_at_gen(col, row, 1);
     }
 
     #[inline]
@@ -196,6 +203,13 @@ impl Board {
             Cell::Empty
         }
 
+    }
+
+    pub fn get_cell_gen(&self, col: isize, row: isize) -> usize {
+        match self.get_cell(col ,row) {
+            Cell::Occupied{gen} => gen,
+            Cell::Empty => 0
+        }
     }
 
     pub fn get_vicinity(&self, col: isize, row: isize) -> Vec<bool> {
@@ -261,8 +275,9 @@ impl<'a> Iterator for BoardIntoIterator<'a> {
             Some(e) => {
 
                 self.col += 1;
-                let coord = Coord{col: self.col, row: self.row};
-                Some(CellDesc { coord: coord,
+
+                Some(CellDesc { coord: Coord { col: self.col, row: self.row },
+                                gen: self.board.get_cell_gen(self.col, self.row),
                                 is_alive: self.board.is_alive(self.col, self.row),
                                 new_line: false })
             }
@@ -279,7 +294,8 @@ impl<'a> Iterator for BoardIntoIterator<'a> {
                     self.cell_iter = Box::new(self.board.cells[self.row].into_iter());
                     self.cell_iter.next();
 
-                    Some(CellDesc { coord: Coord{col: self.col, row: self.row },
+                    Some(CellDesc { coord: Coord { col: self.col, row: self.row },
+                                    gen: self.board.get_cell_gen(self.col, self.row),
                                     is_alive: self.board.is_alive(self.col, self.row),
                                     new_line: true })
                 } else {
@@ -298,7 +314,7 @@ impl ToString for Board {
 
         let mut output = String::new();
 
-        for CellDesc { coord, is_alive, new_line } in self.into_iter() {
+        for CellDesc { coord, gen, is_alive, new_line } in self.into_iter() {
             if new_line {
                 output.push('\n');
             }
@@ -325,11 +341,11 @@ fn test_board_ok() {
     my_board.born_at(5, 2);
 
     // test allocated cells
-    assert_eq!(my_board.get_cell(0, 0), Cell::Occupied);
-    assert_eq!(my_board.get_cell(4, 4), Cell::Occupied);
+    assert_eq!(my_board.get_cell(0, 0), Cell::Occupied { gen: 1 });
+    assert_eq!(my_board.get_cell(4, 4), Cell::Occupied { gen: 1 });
 
     // test previously expanded cell
-    assert_eq!(my_board.get_cell(5, 2), Cell::Occupied);
+    assert_eq!(my_board.get_cell(5, 2), Cell::Occupied { gen: 1 });
 
     // test existing cell
     assert_eq!(my_board.get_cell(2, 2), Cell::Empty);

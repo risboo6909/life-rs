@@ -30,7 +30,6 @@ use std::time::{Instant, Duration};
 const OPENGL: piston_window::OpenGL = OpenGL::V3_2;
 
 const GREEN: [f32; 4] = [0.5, 1.0, 0.0, 1.0];
-const GREEN_TRNSP: [f32; 4] = [0.5, 1.0, 0.0, 0.5];
 const GRAY: [f32; 4] = [100.0, 100.0, 100.0, 1.0];
 const RED: [f32; 4] = [255.0, 0.0, 0.0, 1.0];
 
@@ -347,14 +346,14 @@ impl Game {
 
     #[inline]
     fn get_top_border(&self, rows: usize) -> f64 {
-        self.cam.translate_y(self.half_height +
-                rows as f64 * self.cell.get_half_height(&self.cam))
+        self.cam.translate_y(self.half_height -
+                rows as f64 * self.cell.get_half_height(&self.cam) - 1.0)
     }
 
     #[inline]
     fn get_bottom_border(&self, rows: usize) -> f64 {
-        return self.cam.translate_y(self.half_height -
-                rows as f64 * self.cell.get_half_height(&self.cam) - 1.0)
+        self.cam.translate_y(self.half_height +
+                rows as f64 * self.cell.get_half_height(&self.cam))
     }
 
     fn draw_grid(&self, c: &Context, g: &mut GlGraphics) {
@@ -368,12 +367,32 @@ impl Game {
         let mut x = self.cam.get_x() - offset_x;
         let mut y = self.cam.get_y() - offset_y;
 
+        let mut right_offset_x = self.width;
+        let mut left_offset_x = 0.0;
+
+        let mut bottom_offset_y = self.height;
+        let mut top_offset_y = 0.0;
+
+        if let Some(cols) = self.engine.get_board().get_cols() {
+            right_offset_x = self.get_right_border(cols);
+            left_offset_x = self.get_left_border(cols);
+        }
+
+        if let Some(rows) = self.engine.get_board().get_rows() {
+            top_offset_y = self.get_top_border(rows);
+            bottom_offset_y = self.get_bottom_border(rows);
+        }
+
         // horizontal lines
         while y < self.height as f64 {
 
-            line(GRAY, 0.09,
-                 [0.0, y, self.width, y],
-                 c.transform, g);
+            if y > top_offset_y && y < bottom_offset_y {
+
+                line(GRAY, 0.09,
+                     [left_offset_x, y, right_offset_x, y],
+                     c.transform, g);
+
+            }
 
             y += grid_height;
 
@@ -382,9 +401,13 @@ impl Game {
         // vertical lines
         while x < self.width as f64 {
 
-            line(GRAY, 0.09,
-                 [x, 0.0, x, self.height],
-                 c.transform, g);
+            if x > left_offset_x && x < right_offset_x {
+
+                line(GRAY, 0.09,
+                     [x, top_offset_y, x, bottom_offset_y],
+                     c.transform, g);
+
+            }
 
             x += grid_height;
 
@@ -398,48 +421,51 @@ impl Game {
 
         let board = self.engine.get_board();
 
-        if let Some(cols) = self.engine.get_board().get_cols() {
+        let mut right_offset_x = self.width;
+        let mut left_offset_x = 0.0;
 
-            let offset_x = self.get_right_border(cols);
+        let mut bottom_offset_y = self.height;
+        let mut top_offset_y = 0.0;
+
+        if let Some(cols) = self.engine.get_board().get_cols() {
+            right_offset_x = self.get_right_border(cols);
+            left_offset_x = self.get_left_border(cols);
+        }
+
+        if let Some(rows) = self.engine.get_board().get_rows() {
+            top_offset_y = self.get_top_border(rows);
+            bottom_offset_y = self.get_bottom_border(rows);
+        }
+
+        if let Some(cols) = self.engine.get_board().get_cols() {
 
             // draw right border
 
             line(RED, 0.3,
-                 [offset_x, 0.0, offset_x, self.height],
+                 [right_offset_x, top_offset_y, right_offset_x, bottom_offset_y],
                  c.transform, g);
-
-            let offset_x = self.get_left_border(cols);
 
             // draw left border
 
             line(RED, 0.3,
-                 [offset_x, 0.0, offset_x, self.height],
+                 [left_offset_x, top_offset_y, left_offset_x, bottom_offset_y],
                  c.transform, g);
-
         }
 
-
         if let Some(rows) = self.engine.get_board().get_rows() {
-
-            let offset_y = self.get_top_border(rows);
 
             // draw top border
 
             line(RED, 0.3,
-                 [0.0, offset_y, self.width, offset_y],
+                 [left_offset_x, top_offset_y, right_offset_x, top_offset_y],
                  c.transform, g);
-
-
-            let offset_y = self.get_bottom_border(rows);
 
             // draw bottom border
 
             line(RED, 0.3,
-                 [0.0, offset_y, self.width, offset_y],
+                 [left_offset_x, bottom_offset_y, right_offset_x, bottom_offset_y],
                  c.transform, g);
-
         }
-
     }
 
     fn draw_hud(&mut self, c: &Context, g: &mut GlGraphics) {
@@ -447,6 +473,21 @@ impl Game {
              &format!("iteration {}", self.engine.cur_iteration()),
              &mut self.resources.font,
              c.trans(10.0, 20.0).transform, g);
+    }
+
+    fn get_color(gen: usize) -> [f32; 4] {
+
+        let mut gen = gen as f32;
+
+        let mut r = 255.0;
+
+        if gen < 255.0 {
+            r = gen / 255.0;
+        }
+
+        let tmp = [r, 1.0, 0.0, 0.5];
+
+        tmp
     }
 
     fn paint(&mut self, c: Context, g: &mut GlGraphics) {
@@ -457,12 +498,11 @@ impl Game {
 
             let board = self.engine.get_board();
 
-            for CellDesc { coord, is_alive, .. } in board.into_iter() {
+            for CellDesc { coord, gen, is_alive, .. } in board.into_iter() {
 
                 if is_alive {
-
                     let (x, y) = self.to_screen(coord.col, coord.row);
-                    rectangle(GREEN_TRNSP, [x, y,
+                    rectangle(Game::get_color(gen), [x, y,
                         self.cell.get_width(&self.cam),
                         self.cell.get_height(&self.cam)],
                               c.transform, g);

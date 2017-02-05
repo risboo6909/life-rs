@@ -36,7 +36,7 @@ impl Engine {
 
         let mut next_gen = Board::new(self.board.get_cols(), self.board.get_rows());
 
-        for CellDesc { coord, is_alive, .. } in self.board.into_iter() {
+        for CellDesc { coord, gen, is_alive, .. } in self.board.into_iter() {
 
             let col = coord.col;
             let row = coord.row;
@@ -56,7 +56,7 @@ impl Engine {
                 // any live cell with two or three live neighbours
                 // lives on to the next generation.
                 if neighbours_cnt == 2 || neighbours_cnt == 3 {
-                    next_gen.born_at(col, row);
+                    next_gen.born_at_gen(col, row, gen + 1);
                 }
 
             } else {
