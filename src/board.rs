@@ -14,8 +14,8 @@
 /// will contain initial configuration.
 
 use std::cmp::max;
-
-use ::symvec::SymVec;
+use std::collections::HashMap;
+use std::collections::hash_map::{IntoIter, Iter};
 
 
 #[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -27,6 +27,7 @@ pub struct Coord {
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum Cell {
     Empty,
+    // occupied cell contains its generation
     Occupied { gen: usize }
 }
 
@@ -38,7 +39,7 @@ pub struct CellDesc {
 }
 
 pub struct Board {
-    cells: SymVec<SymVec<Cell>>,
+    cells: HashMap<(isize, isize), Cell>,
 
     rows: Option<usize>,
     cols: Option<usize>,
@@ -51,29 +52,12 @@ impl Board {
 
     pub fn new(width: Option<usize>, height: Option<usize>) -> Board {
 
-        // initially we allocate 2x2 board and extend it on demand
-        Board { cells: Board::allocate(2, 2),
+        Board { cells: HashMap::new(),
                 cols: width,
                 rows: height,
                 half_cols: width.map(|x| (x / 2) as isize),
                 half_rows: height.map(|x| (x / 2) as isize),
               }
-
-    }
-
-    fn allocate(cols: usize, rows: usize) -> SymVec<SymVec<Cell>> {
-
-        let mut tmp: SymVec<SymVec<Cell>> = SymVec::new();
-
-        for _ in 0..rows {
-            let mut col = SymVec::new();
-            for _ in 0..cols {
-                col.push_front(Cell::Empty);
-            }
-            tmp.push_front(col);
-        }
-
-        tmp
     }
 
     #[inline]
@@ -124,34 +108,10 @@ impl Board {
     }
 
     pub fn ensure_cell(&mut self, col: isize, row: isize) {
-
-        // extend board by any number of cells if needed
-        // maintain them inside board limits
-
-        let (col, row) = self.constrain_board(col, row);
-
-        if row >= 0 {
-            while self.cells.need_extend_pos(row) {
-                self.cells.push_front(SymVec::new());
-            }
-
-        } else {
-            while self.cells.need_extend_neg(row) {
-                self.cells.push_back(SymVec::new());
-            }
+        let coords = self.constrain_board(col, row);
+        if self.cells.get(&coords) == None {
+            self.cells.insert(coords, Cell::Empty);
         }
-
-        if col >= 0 {
-            while self.cells[row].need_extend_pos(col) {
-                self.cells[row].push_front(Cell::Empty);
-            }
-
-        } else {
-            while self.cells[row].need_extend_neg(col) {
-                self.cells[row].push_back(Cell::Empty);
-            }
-        }
-
     }
 
     pub fn born_at_gen(&mut self, col: isize, row: isize, gen: usize) {
@@ -171,9 +131,8 @@ impl Board {
         self.ensure_cell(col, row + 1);
         self.ensure_cell(col - 1, row + 1);
 
-        let (col, row) = self.constrain_board(col, row);
-
-        self.cells[row][col] = Cell::Occupied { gen: gen };
+        let coords = self.constrain_board(col, row);
+        self.cells.insert(coords, Cell::Occupied { gen: gen });
 
     }
 
@@ -183,8 +142,8 @@ impl Board {
 
     #[inline]
     pub fn kill_at(&mut self, col: isize, row: isize) {
-        let (col, row) = self.constrain_board(col, row);
-        self.cells[row][col] = Cell::Empty;
+        let coords = self.constrain_board(col, row);    
+        self.cells.remove(&coords);
     }
 
     #[inline]
@@ -193,16 +152,17 @@ impl Board {
     }
 
     pub fn get_cell(&self, col: isize, row: isize) -> Cell {
-
         // if cell is not yet initialized it is considered as free
-
-        let (col, row) = self.constrain_board(col, row);
-        if self.cells.is_available(row) && self.cells[row].is_available(col) {
-            self.cells[row][col]
-        } else {
-            Cell::Empty
+        match self.cells.get(&self.constrain_board(col, row)) {
+            Some(x) => {
+                if let &Cell::Occupied {gen: gen} = x {
+                    return *x
+                } else {
+                    return Cell::Empty
+                }
+            }
+            None => Cell::Empty
         }
-
     }
 
     pub fn get_cell_gen(&self, col: isize, row: isize) -> usize {
@@ -248,20 +208,15 @@ impl<'a> IntoIterator for &'a Board {
     type IntoIter = BoardIntoIterator<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
-        let row = -(self.cells.len_neg() as isize);
-        let col = -(self.cells[row].len_neg() as isize) - 1;
-
-        BoardIntoIterator{board: self, row: row, col: col,
-                          cell_iter: Box::new(self.cells[row].into_iter())}
+        BoardIntoIterator { board: &self,
+                            cell_iter: Box::new(self.cells.iter()) }
     }
 
 }
 
 pub struct BoardIntoIterator<'a> {
     board: &'a Board,
-    row: isize,
-    col: isize,
-    cell_iter: Box<Iterator<Item=&'a Cell> + 'a>,
+    cell_iter: Box<Iter<'a, (isize, isize), Cell>>,
 }
 
 impl<'a> Iterator for BoardIntoIterator<'a> {
@@ -274,60 +229,27 @@ impl<'a> Iterator for BoardIntoIterator<'a> {
 
             Some(e) => {
 
-                self.col += 1;
+                let &(col, row) = e.0;
+                let &cell = e.1;
 
-                Some(CellDesc { coord: Coord { col: self.col, row: self.row },
-                                gen: self.board.get_cell_gen(self.col, self.row),
-                                is_alive: self.board.is_alive(self.col, self.row),
+                let gen = match cell {
+                    Cell::Occupied{gen} => gen,
+                    Cell::Empty => 0
+                };
+
+                Some(CellDesc { coord: Coord { col: col, row: row },
+                                gen: gen,
+                                is_alive: self.board.is_alive(col, row),
                                 new_line: false })
-            }
-
-            None => {
-
-                // ugly but I don't know how to make it better
-
-                self.row += 1;
-
-                if self.row < self.board.cells.len_pos() as isize {
-
-                    self.col = -(self.board.cells[self.row].len_neg() as isize);
-
-                    self.cell_iter = Box::new(self.board.cells[self.row].into_iter());
-                    self.cell_iter.next();
-
-                    Some(CellDesc { coord: Coord { col: self.col, row: self.row },
-                                    gen: self.board.get_cell_gen(self.col, self.row),
-                                    is_alive: self.board.is_alive(self.col, self.row),
-                                    new_line: true })
-                } else {
-                    None
-                }
 
             }
 
+            None => None
         }
 
     }
 }
 
-impl ToString for Board {
-    fn to_string(&self) -> String {
-
-        let mut output = String::new();
-
-        for CellDesc { coord, gen, is_alive, new_line } in self.into_iter() {
-            if new_line {
-                output.push('\n');
-            }
-            if is_alive {
-                output.push('*');
-            } else {
-                output.push('.');
-            }
-        }
-        output
-    }
-}
 
 #[test]
 fn test_board_ok() {

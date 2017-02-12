@@ -5,7 +5,6 @@ extern crate piston_window;
 extern crate opengl_graphics;
 extern crate find_folder;
 
-mod symvec;
 mod board;
 mod engine;
 mod cam;
