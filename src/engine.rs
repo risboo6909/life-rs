@@ -1,7 +1,7 @@
 extern crate rand;
 
 use ::board::Board;
-use ::board::{Coord, CellDesc};
+use ::board::CellDesc;
 use self::rand::distributions::{IndependentSample, Range};
 
 

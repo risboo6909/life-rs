@@ -7,9 +7,8 @@
 /// my_board.born_at(20, 20);
 /// ```
 
-use std::cmp::max;
 use std::collections::HashMap;
-use std::collections::hash_map::{IntoIter, Iter};
+use std::collections::hash_map::Iter;
 
 
 #[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -149,7 +148,7 @@ impl Board {
         // if cell is not yet initialized it is considered as free
         match self.cells.get(&self.constrain_board(col, row)) {
             Some(x) => {
-                if let &Cell::Occupied {gen: gen} = x {
+                if let &Cell::Occupied {gen} = x {
                     return *x
                 } else {
                     return Cell::Empty

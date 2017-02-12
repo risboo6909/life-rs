@@ -14,8 +14,7 @@ use cam::Cam;
 use find_folder::Search;
 use piston_window::{OpenGL, Context, text, clear, rectangle, line,
                     Transformed, Event, Button, Input,
-                    MouseButton, Key, MouseCursorEvent, ReleaseEvent,
-                    PressEvent, PistonWindow, WindowSettings, Motion};
+                    MouseButton, Key, PistonWindow, WindowSettings, Motion};
 
 use opengl_graphics::GlGraphics;
 use opengl_graphics::glyph_cache::GlyphCache;
@@ -108,7 +107,7 @@ impl Game {
 
     fn new(width: f64, height: f64) -> Game {
 
-        let mut window: PistonWindow = WindowSettings::new(
+        let window: PistonWindow = WindowSettings::new(
             "My Rust Life",
             [width as u32, height as u32]
         ).opengl(OPENGL)
@@ -117,7 +116,7 @@ impl Game {
          .build()
          .unwrap();
 
-        let mut game_board = Board::new(Some(200), Some(200));
+        let game_board = Board::new(Some(200), Some(200));
 
         Game {
 
@@ -176,7 +175,7 @@ impl Game {
                             gl.draw(args.viewport(), |c, g| self.paint(c, g));
                         }
 
-                        Event::Update(args) => {
+                        Event::Update(_) => {
                             if self.cur_state == State::Working {
                                 if Instant::now() - last_iter_time >= Duration::from_millis(3) {
                                     self.engine.one_iteration();
@@ -426,8 +425,6 @@ impl Game {
 
         // draw borders
 
-        let board = self.engine.get_board();
-
         let mut right_offset_x = self.width;
         let mut left_offset_x = 0.0;
 
@@ -444,7 +441,7 @@ impl Game {
             bottom_offset_y = self.get_bottom_border(rows);
         }
 
-        if let Some(cols) = self.engine.get_board().get_cols() {
+        if let Some(_) = self.engine.get_board().get_cols() {
 
             // draw right border
 
@@ -459,7 +456,7 @@ impl Game {
                  c.transform, g);
         }
 
-        if let Some(rows) = self.engine.get_board().get_rows() {
+        if let Some(_) = self.engine.get_board().get_rows() {
 
             // draw top border
 
@@ -484,7 +481,7 @@ impl Game {
 
     fn get_color(gen: usize) -> [f32; 4] {
 
-        let mut gen = gen as f32;
+        let gen = gen as f32;
 
         let mut r = 255.0;
 
