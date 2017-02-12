@@ -7,3 +7,4 @@ authors = ["risboo6909 <ttyv00@gmail.com"]
 piston_window = "0.60.0"
 piston2d-opengl_graphics = "0.36.1"
 find_folder = "*"
+rand = "*"

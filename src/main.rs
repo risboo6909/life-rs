@@ -178,7 +178,7 @@ impl Game {
 
                         Event::Update(args) => {
                             if self.cur_state == State::Working {
-                                if Instant::now() - last_iter_time >= Duration::from_millis(10) {
+                                if Instant::now() - last_iter_time >= Duration::from_millis(3) {
                                     self.engine.one_iteration();
                                     last_iter_time = Instant::now();
                                 }
@@ -257,6 +257,14 @@ impl Game {
 
                         Event::Input(Input::Press(Button::Keyboard(Key::Z))) => {
                             self.cam.zoom_in(self.move_step);
+                        }
+
+                        Event::Input(Input::Press(Button::Keyboard(Key::R))) => {
+                            // If in pause mode - fill board with a random pattern
+                            if self.cur_state == State::Paused {
+                                let board = self.engine.create_random(0.2);
+                                self.engine.set_board(board);
+                            }
                         }
 
                         Event::Input(Input::Press(Button::Mouse(MouseButton::Left))) => {

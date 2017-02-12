@@ -1,17 +1,11 @@
-/// Expandable game board, it expands on demand in all four directions, constraints
-/// can be defined to limit maxmimum memory consumption (thus the game board
-/// will behave like a torus), otherwise it will expand "forever" consuming memory :]
+/// Represents the game board. Only cells that are not empty and their
+/// 8 neighbours are saved in memory for proper simulation.
 ///
+/// Example usage:
 /// ```
 /// let mut my_board = Board::new(Some(30), Some(30));
 /// my_board.born_at(20, 20);
 /// ```
-/// Example above will create a board with maximum height and width
-/// equal to 30, so it will contain 900 cells.
-///
-/// In fact, board of any size can be created and it will expand on demand,
-/// therefor it is recommended to initially create smallest board which
-/// will contain initial configuration.
 
 use std::cmp::max;
 use std::collections::HashMap;
@@ -119,7 +113,7 @@ impl Board {
         self.ensure_cell(col, row);
 
         // we must allocate 8 cells around current cell because
-        // new species can potentially be borned there, so we
+        // new species can potentially born there, so we
         // have to check them on next iteration
 
         self.ensure_cell(col - 1, row);
@@ -142,7 +136,7 @@ impl Board {
 
     #[inline]
     pub fn kill_at(&mut self, col: isize, row: isize) {
-        let coords = self.constrain_board(col, row);    
+        let coords = self.constrain_board(col, row);
         self.cells.remove(&coords);
     }
 

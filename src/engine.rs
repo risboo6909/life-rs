@@ -1,11 +1,15 @@
+extern crate rand;
+
 use ::board::Board;
 use ::board::{Coord, CellDesc};
+use self::rand::distributions::{IndependentSample, Range};
 
 
 pub struct Engine {
     pub board: Board,
     pub iteration: usize,
 }
+
 
 impl Engine {
 
@@ -28,8 +32,39 @@ impl Engine {
         &self.board
     }
 
+    pub fn set_board(&mut self, board: Board) {
+        self.board = board;
+    }
+
     pub fn get_board_mut(&mut self) -> &mut Board {
         &mut self.board
+    }
+
+    pub fn create_random(&self, p: f64) -> Board {
+
+        let mut board = Board::new(self.board.get_cols(), self.board.get_rows());
+
+        let cols = self.board.get_cols();
+        let rows = self.board.get_rows();
+
+        let between = Range::new(0f64, 1.);
+        let mut rng = rand::thread_rng();
+
+        if cols.is_some() && rows.is_some() {
+
+            for col in 0..cols.unwrap() {
+                for row in 0..rows.unwrap() {
+                    let rval = between.ind_sample(&mut rng);
+                    if rval <= p {
+                        board.born_at(col as isize, row as isize);
+                    }
+                }
+            }
+
+        }
+
+        board
+
     }
 
     pub fn one_iteration(&mut self) {
