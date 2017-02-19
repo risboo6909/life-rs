@@ -78,13 +78,47 @@ impl CellProp {
 }
 
 
-struct Game {
+struct GameWindow {
+
+    window: Rc<RefCell<PistonWindow>>,
+
     width: f64,
     height: f64,
+}
 
-    half_width: f64,
-    half_height: f64,
 
+impl GameWindow {
+
+    #[inline]
+    pub fn get_width(&self) -> f64 {
+        self.width
+    }
+
+    #[inline]
+    pub fn get_height(&self) -> f64 {
+        self.height
+    }
+
+    #[inline]
+    pub fn get_half_width(&self) -> f64 {
+        0.5 * self.get_width()
+    }
+
+    #[inline]
+    pub fn get_half_height(&self) -> f64 {
+        0.5 * self.get_height()
+    }
+
+    #[inline]
+    pub fn get_window(&self) -> &Rc<RefCell<PistonWindow>> {
+        &self.window
+    }
+
+}
+
+struct Game {
+
+    window: GameWindow,
     cell: CellProp,
 
     move_step: f64,
@@ -92,7 +126,6 @@ struct Game {
 
     show_grid: bool,
 
-    window: Rc<RefCell<PistonWindow>>,
     engine: Engine,
     cam: Cam,
     cur_state: State,
@@ -115,13 +148,9 @@ impl Game {
         let game_board = Board::new(Some(200), Some(200));
 
         Game {
-            // window width and height in pixels
-            width: width,
-            height: height,
 
-            // half window width and height
-            half_width: 0.5 * width,
-            half_height: 0.5 * height,
+            window: GameWindow{width: width, height: height,
+                window: Rc::new(RefCell::new(window))},
 
             cell: CellProp::new(10.0, 10.0),
 
@@ -132,7 +161,6 @@ impl Game {
             // show grid
             show_grid: true,
 
-            window: Rc::new(RefCell::new(window)),
             engine: Engine::new(game_board),
             cam: Cam::new(0.0, 0.0, 1.0),
 
@@ -155,7 +183,8 @@ impl Game {
         let mut gl = GlGraphics::new(OPENGL);
 
         loop {
-            let event = { self.window.borrow_mut().next() };
+
+            let event = { self.window.get_window().borrow_mut().next() };
 
             match event {
                 Some(e) => {
@@ -284,10 +313,10 @@ impl Game {
         // converts from logical board coordinates into screen coordinates
         // taking in account current camera position and scale
 
-        let x = col as f64 * self.cell.get_width(&self.cam) + self.half_width -
+        let x = col as f64 * self.cell.get_width(&self.cam) + self.window.get_half_width() -
             self.cell.get_half_width(&self.cam);
 
-        let y = row as f64 * self.cell.get_height(&self.cam) + self.half_height -
+        let y = row as f64 * self.cell.get_height(&self.cam) + self.window.get_half_height() -
             self.cell.get_half_height(&self.cam);
 
         self.cam.translate(x, y)
@@ -296,8 +325,8 @@ impl Game {
     fn to_logical(&self, x: f64, y: f64) -> (isize, isize) {
         let (x, y) = self.cam.translate_inv(x, y);
 
-        let mut offset_x = x - self.half_width;
-        let mut offset_y = y - self.half_height;
+        let mut offset_x = x - self.window.get_half_width();
+        let mut offset_y = y - self.window.get_half_height();
 
         if offset_x < 0.0 {
             offset_x -= self.cell.get_half_width(&self.cam);
@@ -319,25 +348,25 @@ impl Game {
 
     #[inline]
     fn get_right_border(&self, cols: usize) -> f64 {
-        self.cam.translate_x(self.half_width +
+        self.cam.translate_x(self.window.get_half_width() +
             cols as f64 * self.cell.get_half_width(&self.cam))
     }
 
     #[inline]
     fn get_left_border(&self, cols: usize) -> f64 {
-        self.cam.translate_x(self.half_width -
+        self.cam.translate_x(self.window.get_half_width() -
             cols as f64 * self.cell.get_half_width(&self.cam) - 1.0)
     }
 
     #[inline]
     fn get_top_border(&self, rows: usize) -> f64 {
-        self.cam.translate_y(self.half_height -
+        self.cam.translate_y(self.window.get_half_height() -
             rows as f64 * self.cell.get_half_height(&self.cam) - 1.0)
     }
 
     #[inline]
     fn get_bottom_border(&self, rows: usize) -> f64 {
-        self.cam.translate_y(self.half_height +
+        self.cam.translate_y(self.window.get_half_height() +
             rows as f64 * self.cell.get_half_height(&self.cam))
     }
 
@@ -345,16 +374,16 @@ impl Game {
         let grid_width = self.cell.get_width(&self.cam);
         let grid_height = self.cell.get_height(&self.cam);
 
-        let offset_x = 0.5 * grid_width - 0.5 * self.width % grid_width;
-        let offset_y = 0.5 * grid_height - 0.5 * self.height % grid_height;
+        let offset_x = 0.5 * grid_width - 0.5 * self.window.get_width() % grid_width;
+        let offset_y = 0.5 * grid_height - 0.5 * self.window.get_height() % grid_height;
 
         let mut x = self.cam.get_x() - offset_x;
         let mut y = self.cam.get_y() - offset_y;
 
-        let mut right_offset_x = self.width;
+        let mut right_offset_x = self.window.get_width();
         let mut left_offset_x = 0.0;
 
-        let mut bottom_offset_y = self.height;
+        let mut bottom_offset_y = self.window.get_height();
         let mut top_offset_y = 0.0;
 
         if let Some(cols) = self.engine.get_board().get_cols() {
@@ -368,7 +397,7 @@ impl Game {
         }
 
         // horizontal lines
-        while y < self.height as f64 {
+        while y < self.window.get_height() as f64 {
             if y > top_offset_y && y < bottom_offset_y {
                 line(GRAY, 0.09,
                      [left_offset_x, y, right_offset_x, y],
@@ -379,7 +408,7 @@ impl Game {
         }
 
         // vertical lines
-        while x < self.width as f64 {
+        while x < self.window.get_width() as f64 {
             if x > left_offset_x && x < right_offset_x {
                 line(GRAY, 0.09,
                      [x, top_offset_y, x, bottom_offset_y],
@@ -393,10 +422,10 @@ impl Game {
     fn draw_borders(&self, c: &Context, g: &mut GlGraphics) {
         // draw borders
 
-        let mut right_offset_x = self.width;
+        let mut right_offset_x = self.window.get_width();
         let mut left_offset_x = 0.0;
 
-        let mut bottom_offset_y = self.height;
+        let mut bottom_offset_y = self.window.get_height();
         let mut top_offset_y = 0.0;
 
         if let Some(cols) = self.engine.get_board().get_cols() {
