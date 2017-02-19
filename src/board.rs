@@ -34,6 +34,8 @@ pub struct CellDesc {
 pub struct Board {
     cells: HashMap<(isize, isize), Cell>,
 
+    population: usize,
+
     rows: Option<usize>,
     cols: Option<usize>,
 
@@ -45,6 +47,7 @@ impl Board {
     pub fn new(width: Option<usize>, height: Option<usize>) -> Board {
         Board {
             cells: HashMap::new(),
+            population: 0,
             cols: width,
             rows: height,
             half_cols: width.map(|x| (x / 2) as isize),
@@ -92,7 +95,7 @@ impl Board {
         (col, row)
     }
 
-    pub fn ensure_cell(&mut self, col: isize, row: isize) {
+    fn ensure_cell(&mut self, col: isize, row: isize) {
         let coords = self.constrain_board(col, row);
         if self.cells.get(&coords) == None {
             self.cells.insert(coords, Cell::Empty);
@@ -100,23 +103,27 @@ impl Board {
     }
 
     pub fn born_at_gen(&mut self, col: isize, row: isize, gen: usize) {
-        self.ensure_cell(col, row);
+        if !self.is_alive(col, row) {
 
-        // we must allocate 8 cells around current cell because
-        // new species can potentially born there, so we
-        // have to check them on next iteration
+            self.ensure_cell(col, row);
 
-        self.ensure_cell(col - 1, row);
-        self.ensure_cell(col - 1, row - 1);
-        self.ensure_cell(col, row - 1);
-        self.ensure_cell(col + 1, row - 1);
-        self.ensure_cell(col + 1, row);
-        self.ensure_cell(col + 1, row + 1);
-        self.ensure_cell(col, row + 1);
-        self.ensure_cell(col - 1, row + 1);
+            // we must allocate 8 cells around current cell because
+            // new species can potentially born there, so we
+            // have to check them on next iteration
 
-        let coords = self.constrain_board(col, row);
-        self.cells.insert(coords, Cell::Occupied { gen: gen });
+            self.ensure_cell(col - 1, row);
+            self.ensure_cell(col - 1, row - 1);
+            self.ensure_cell(col, row - 1);
+            self.ensure_cell(col + 1, row - 1);
+            self.ensure_cell(col + 1, row);
+            self.ensure_cell(col + 1, row + 1);
+            self.ensure_cell(col, row + 1);
+            self.ensure_cell(col - 1, row + 1);
+
+            let coords = self.constrain_board(col, row);
+            self.population += 1;
+            self.cells.insert(coords, Cell::Occupied { gen: gen });
+        }
     }
 
     pub fn born_at(&mut self, col: isize, row: isize) {
@@ -126,6 +133,7 @@ impl Board {
     #[inline]
     pub fn kill_at(&mut self, col: isize, row: isize) {
         let coords = self.constrain_board(col, row);
+        self.population -= 1;
         self.cells.remove(&coords);
     }
 
@@ -180,6 +188,11 @@ impl Board {
     #[inline]
     pub fn get_rows(&self) -> Option<usize> {
         self.rows
+    }
+
+    #[inline]
+    pub fn get_population(&self) -> usize {
+        self.population
     }
 }
 
