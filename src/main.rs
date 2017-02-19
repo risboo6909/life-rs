@@ -51,9 +51,6 @@ struct Game {
     window: GameWindow,
     cell: CellProp,
 
-    move_step: f64,
-    acceleration: f64,
-
     show_grid: bool,
     render: bool,
 
@@ -84,10 +81,6 @@ impl Game {
 
             cell: CellProp::new(10.0, 10.0),
 
-            // scale coeff and move acceleration
-            acceleration: 1.4,
-            move_step: 1.0,
-
             // show grid
             show_grid: true,
 
@@ -95,7 +88,8 @@ impl Game {
             render: true,
 
             engine: Engine::new(game_board),
-            cam: Cam::new(0.0, 0.0, 1.0),
+
+            cam: Cam::new(0.0, 0.0),
 
             // current game state
             cur_state: State::Paused,
@@ -169,48 +163,57 @@ impl Game {
                         }
 
                         Event::Input(Input::Press(Button::Keyboard(Key::Right))) => {
-                            self.cam.move_right(self.move_step);
-                            self.move_step *= self.acceleration;
+                            self.cam.move_right();
                         }
 
                         Event::Input(Input::Release(Button::Keyboard(Key::Right))) => {
-                            self.move_step = 1.0;
+                            self.cam.reset_move_step();
                         }
 
                         Event::Input(Input::Press(Button::Keyboard(Key::Left))) => {
-                            self.cam.move_left(self.move_step);
-                            self.move_step *= self.acceleration;
+                            self.cam.move_left();
                         }
 
                         Event::Input(Input::Release(Button::Keyboard(Key::Left))) => {
-                            self.move_step = 1.0;
+                            self.cam.reset_move_step();
                         }
 
                         Event::Input(Input::Press(Button::Keyboard(Key::Up))) => {
-                            self.cam.move_up(self.move_step);
-                            self.move_step *= self.acceleration;
+                            self.cam.move_up();
                         }
 
                         Event::Input(Input::Release(Button::Keyboard(Key::Up))) => {
-                            self.move_step = 1.0;
+                            self.cam.reset_move_step();
                         }
 
                         Event::Input(Input::Press(Button::Keyboard(Key::Down))) => {
-                            self.cam.move_down(self.move_step);
-                            self.move_step *= self.acceleration;
+                            self.cam.move_down();;
                         }
 
                         Event::Input(Input::Release(Button::Keyboard(Key::Down))) => {
-                            self.move_step = 1.0;
+                            self.cam.reset_move_step();
                         }
 
+                        // zoom out ->
                         Event::Input(Input::Press(Button::Keyboard(Key::NumPadMinus))) => {
-                            self.cam.zoom_out(0.1);
+                            self.cam.zoom_out();
                         }
 
-                        Event::Input(Input::Press(Button::Keyboard(Key::Z))) => {
-                            self.cam.zoom_in(self.move_step);
+                        Event::Input(Input::Press(Button::Keyboard(Key::Minus))) => {
+                            self.cam.zoom_out();
                         }
+                        // zoom out <-
+
+                        // zoom in ->
+                        Event::Input(Input::Press(Button::Keyboard(Key::NumPadPlus))) => {
+                            self.cam.zoom_in();
+                        }
+
+                        // use "Equals" instead of "Plus" to avoid holding shift key requirement
+                        Event::Input(Input::Press(Button::Keyboard(Key::Equals))) => {
+                            self.cam.zoom_in();
+                        }
+                        // zoom in <-
 
                         Event::Input(Input::Press(Button::Keyboard(Key::R))) => {
                             // If in pause mode - fill board with a random pattern
