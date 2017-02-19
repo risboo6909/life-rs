@@ -1,5 +1,4 @@
 pub struct Cam {
-
     x: f64,
     y: f64,
 
@@ -9,7 +8,6 @@ pub struct Cam {
 
 
 impl Cam {
-
     pub fn new(x: f64, y: f64, scale: f64) -> Self {
         Cam { x: x, y: y, scale: scale }
     }
@@ -56,7 +54,7 @@ impl Cam {
 
     #[inline]
     pub fn scale_inv(&self, width: f64, height: f64) -> (f64, f64) {
-        ((1.0/self.scale) * width, (1.0/self.scale) * height)
+        ((1.0 / self.scale) * width, (1.0 / self.scale) * height)
     }
 
     #[inline]
@@ -88,5 +86,4 @@ impl Cam {
     pub fn move_down(&mut self, offset: f64) {
         self.y -= offset;
     }
-
 }

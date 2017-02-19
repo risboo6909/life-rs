@@ -42,20 +42,18 @@ pub struct Board {
 }
 
 impl Board {
-
     pub fn new(width: Option<usize>, height: Option<usize>) -> Board {
-
-        Board { cells: HashMap::new(),
-                cols: width,
-                rows: height,
-                half_cols: width.map(|x| (x / 2) as isize),
-                half_rows: height.map(|x| (x / 2) as isize),
-              }
+        Board {
+            cells: HashMap::new(),
+            cols: width,
+            rows: height,
+            half_cols: width.map(|x| (x / 2) as isize),
+            half_rows: height.map(|x| (x / 2) as isize),
+        }
     }
 
     #[inline]
     fn cycle(x: isize, min_val: isize, max_val: isize) -> isize {
-
         // TODO: add description
 
         let cnt = max_val - min_val;
@@ -69,29 +67,23 @@ impl Board {
         } else {
             x
         }
-
     }
 
     #[inline]
     fn bound_coordinate(size: Option<isize>, coord: isize) -> isize {
-
         match size {
-
             Some(x) => {
-                    if coord >= x || coord < -x {
-                        Board::cycle(coord, -x, x)
-                    } else { coord }
-                },
+                if coord >= x || coord < -x {
+                    Board::cycle(coord, -x, x)
+                } else { coord }
+            },
 
             None => coord
-
         }
-
     }
 
     #[inline]
     fn constrain_board(&self, col: isize, row: isize) -> (isize, isize) {
-
         // ensure cell coordinates lie inside limits
 
         let col = Board::bound_coordinate(self.half_cols, col);
@@ -108,7 +100,6 @@ impl Board {
     }
 
     pub fn born_at_gen(&mut self, col: isize, row: isize, gen: usize) {
-
         self.ensure_cell(col, row);
 
         // we must allocate 8 cells around current cell because
@@ -126,7 +117,6 @@ impl Board {
 
         let coords = self.constrain_board(col, row);
         self.cells.insert(coords, Cell::Occupied { gen: gen });
-
     }
 
     pub fn born_at(&mut self, col: isize, row: isize) {
@@ -148,7 +138,7 @@ impl Board {
         // if cell is not yet initialized it is considered as free
         match self.cells.get(&self.constrain_board(col, row)) {
             Some(x) => {
-                if let &Cell::Occupied {gen} = x {
+                if let &Cell::Occupied { gen } = x {
                     return *x
                 } else {
                     return Cell::Empty
@@ -159,14 +149,13 @@ impl Board {
     }
 
     pub fn get_cell_gen(&self, col: isize, row: isize) -> usize {
-        match self.get_cell(col ,row) {
-            Cell::Occupied{gen} => gen,
+        match self.get_cell(col, row) {
+            Cell::Occupied { gen } => gen,
             Cell::Empty => 0
         }
     }
 
     pub fn get_vicinity(&self, col: isize, row: isize) -> Vec<bool> {
-
         // get contents of 8 neighbours of a given cell
 
         let neighbours = vec![
@@ -192,19 +181,18 @@ impl Board {
     pub fn get_rows(&self) -> Option<usize> {
         self.rows
     }
-
 }
 
 impl<'a> IntoIterator for &'a Board {
-
     type Item = CellDesc;
     type IntoIter = BoardIntoIterator<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
-        BoardIntoIterator { board: &self,
-                            cell_iter: Box::new(self.cells.iter()) }
+        BoardIntoIterator {
+            board: &self,
+            cell_iter: Box::new(self.cells.iter())
+        }
     }
-
 }
 
 pub struct BoardIntoIterator<'a> {
@@ -213,40 +201,35 @@ pub struct BoardIntoIterator<'a> {
 }
 
 impl<'a> Iterator for BoardIntoIterator<'a> {
-
     type Item = CellDesc;
 
     fn next(&mut self) -> Option<CellDesc> {
-
         match self.cell_iter.next() {
-
             Some(e) => {
-
                 let &(col, row) = e.0;
                 let &cell = e.1;
 
                 let gen = match cell {
-                    Cell::Occupied{gen} => gen,
+                    Cell::Occupied { gen } => gen,
                     Cell::Empty => 0
                 };
 
-                Some(CellDesc { coord: Coord { col: col, row: row },
-                                gen: gen,
-                                is_alive: self.board.is_alive(col, row),
-                                new_line: false })
-
+                Some(CellDesc {
+                    coord: Coord { col: col, row: row },
+                    gen: gen,
+                    is_alive: self.board.is_alive(col, row),
+                    new_line: false
+                })
             }
 
             None => None
         }
-
     }
 }
 
 
 #[test]
 fn test_board_ok() {
-
     let mut my_board = Board::new(Some(10), Some(10));
 
     // set some existing cells
@@ -271,12 +254,10 @@ fn test_board_ok() {
 
     my_board.kill_at(0, 0);
     assert_eq!(my_board.get_cell(0, 0), Cell::Empty);
-
 }
 
 #[test]
 fn test_board_iter() {
-
     let mut my_board = Board::new(Some(10), Some(10));
 
     my_board.born_at(0, 0);
@@ -315,7 +296,6 @@ fn test_glyder() {
 
 #[test]
 fn test_cycle() {
-
     assert_eq!(Board::cycle(0, -5, 5), 0);
     assert_eq!(Board::cycle(-5, -5, 5), -5);
     assert_eq!(Board::cycle(5, -5, 5), -5);
@@ -337,7 +317,6 @@ fn test_cycle() {
     assert_eq!(Board::cycle(-5, -5, -4), -5);
     assert_eq!(Board::cycle(-4, -5, -4), -5);
     assert_eq!(Board::cycle(-6, -5, -4), -5);
-
 }
 
 #[test]

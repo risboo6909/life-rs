@@ -52,9 +52,8 @@ struct CellProp {
 }
 
 impl CellProp {
-
     pub fn new(cell_width: f64, cell_height: f64) -> Self {
-        CellProp {cell_width: cell_width, cell_height: cell_height}
+        CellProp { cell_width: cell_width, cell_height: cell_height }
     }
 
     #[inline]
@@ -80,7 +79,6 @@ impl CellProp {
 
 
 struct Game {
-
     width: f64,
     height: f64,
 
@@ -104,73 +102,64 @@ struct Game {
 
 
 impl Game {
-
     fn new(width: f64, height: f64) -> Game {
-
         let window: PistonWindow = WindowSettings::new(
             "My Rust Life",
             [width as u32, height as u32]
         ).opengl(OPENGL)
-         .samples(8)
-         .exit_on_esc(true)
-         .build()
-         .unwrap();
+            .samples(8)
+            .exit_on_esc(true)
+            .build()
+            .unwrap();
 
         let game_board = Board::new(Some(200), Some(200));
 
         Game {
+            // window width and height in pixels
+            width: width,
+            height: height,
 
-                // window width and height in pixels
-                width: width,
-                height: height,
+            // half window width and height
+            half_width: 0.5 * width,
+            half_height: 0.5 * height,
 
-                // half window width and height
-                half_width: 0.5 * width,
-                half_height: 0.5 * height,
+            cell: CellProp::new(10.0, 10.0),
 
-                cell: CellProp::new(10.0, 10.0),
+            // scale coeff and move acceleration
+            acceleration: 1.4,
+            move_step: 1.0,
 
-                // scale coeff and move acceleration
-                acceleration: 1.4,
-                move_step: 1.0,
+            // show grid
+            show_grid: true,
 
-                // show grid
-                show_grid: true,
+            window: Rc::new(RefCell::new(window)),
+            engine: Engine::new(game_board),
+            cam: Cam::new(0.0, 0.0, 1.0),
 
-                window: Rc::new(RefCell::new(window)),
-                engine: Engine::new(game_board),
-                cam: Cam::new(0.0, 0.0, 1.0),
+            // current game state
+            cur_state: State::Paused,
 
-                // current game state
-                cur_state: State::Paused,
+            resources: Resources {
+                font: GlyphCache::new(Search::ParentsThenKids(3, 3).
+                    for_folder("assets").unwrap().
+                    join("Roboto-Regular.ttf")).unwrap(),
+            },
 
-                resources: Resources {
-                    font: GlyphCache::new(Search::ParentsThenKids(3, 3).
-                                          for_folder("assets").unwrap().
-                                          join("Roboto-Regular.ttf")).unwrap(),
-                },
-
-            }
-
+        }
     }
 
     fn event_dispatcher(&mut self) {
-
         let mut last_iter_time = Instant::now();
         let mut last_pos: Option<[f64; 2]> = None;
 
         let mut gl = GlGraphics::new(OPENGL);
 
         loop {
-
             let event = { self.window.borrow_mut().next() };
 
             match event {
-
                 Some(e) => {
-
                     match e {
-
                         Event::Render(args) => {
                             gl.draw(args.viewport(), |c, g| self.paint(c, g));
                         }
@@ -271,20 +260,15 @@ impl Game {
                         }
 
                         _ => {}
-
                     }
-
                 }
 
                 None => break
-
             }
-
         }
     }
 
     fn born_or_kill(&mut self, kill_alive: bool, x: f64, y: f64) {
-
         let (col, row) = self.to_logical(x, y);
 
         let board = self.engine.get_board_mut();
@@ -297,7 +281,6 @@ impl Game {
     }
 
     fn to_screen(&self, col: isize, row: isize) -> (f64, f64) {
-
         // converts from logical board coordinates into screen coordinates
         // taking in account current camera position and scale
 
@@ -308,11 +291,9 @@ impl Game {
             self.cell.get_half_height(&self.cam);
 
         self.cam.translate(x, y)
-
     }
 
     fn to_logical(&self, x: f64, y: f64) -> (isize, isize) {
-
         let (x, y) = self.cam.translate_inv(x, y);
 
         let mut offset_x = x - self.half_width;
@@ -334,36 +315,33 @@ impl Game {
         let row = (offset_y / self.cell.get_height(&self.cam)) as isize;
 
         (col, row)
-
     }
 
     #[inline]
     fn get_right_border(&self, cols: usize) -> f64 {
         self.cam.translate_x(self.half_width +
-                cols as f64 * self.cell.get_half_width(&self.cam))
-
+            cols as f64 * self.cell.get_half_width(&self.cam))
     }
 
     #[inline]
     fn get_left_border(&self, cols: usize) -> f64 {
         self.cam.translate_x(self.half_width -
-                cols as f64 * self.cell.get_half_width(&self.cam) - 1.0)
+            cols as f64 * self.cell.get_half_width(&self.cam) - 1.0)
     }
 
     #[inline]
     fn get_top_border(&self, rows: usize) -> f64 {
         self.cam.translate_y(self.half_height -
-                rows as f64 * self.cell.get_half_height(&self.cam) - 1.0)
+            rows as f64 * self.cell.get_half_height(&self.cam) - 1.0)
     }
 
     #[inline]
     fn get_bottom_border(&self, rows: usize) -> f64 {
         self.cam.translate_y(self.half_height +
-                rows as f64 * self.cell.get_half_height(&self.cam))
+            rows as f64 * self.cell.get_half_height(&self.cam))
     }
 
     fn draw_grid(&self, c: &Context, g: &mut GlGraphics) {
-
         let grid_width = self.cell.get_width(&self.cam);
         let grid_height = self.cell.get_height(&self.cam);
 
@@ -391,38 +369,28 @@ impl Game {
 
         // horizontal lines
         while y < self.height as f64 {
-
             if y > top_offset_y && y < bottom_offset_y {
-
                 line(GRAY, 0.09,
                      [left_offset_x, y, right_offset_x, y],
                      c.transform, g);
-
             }
 
             y += grid_height;
-
         }
 
         // vertical lines
         while x < self.width as f64 {
-
             if x > left_offset_x && x < right_offset_x {
-
                 line(GRAY, 0.09,
                      [x, top_offset_y, x, bottom_offset_y],
                      c.transform, g);
-
             }
 
             x += grid_height;
-
         }
-
     }
 
     fn draw_borders(&self, c: &Context, g: &mut GlGraphics) {
-
         // draw borders
 
         let mut right_offset_x = self.width;
@@ -442,7 +410,6 @@ impl Game {
         }
 
         if let Some(_) = self.engine.get_board().get_cols() {
-
             // draw right border
 
             line(RED, 0.3,
@@ -457,7 +424,6 @@ impl Game {
         }
 
         if let Some(_) = self.engine.get_board().get_rows() {
-
             // draw top border
 
             line(RED, 0.3,
@@ -480,7 +446,6 @@ impl Game {
     }
 
     fn get_color(gen: usize) -> [f32; 4] {
-
         let gen = gen as f32;
 
         let mut r = 255.0;
@@ -495,15 +460,12 @@ impl Game {
     }
 
     fn paint(&mut self, c: Context, g: &mut GlGraphics) {
-
         clear([0.0, 0.0, 0.0, 1.0], g);
 
         {
-
             let board = self.engine.get_board();
 
             for CellDesc { coord, gen, is_alive, .. } in board.into_iter() {
-
                 if is_alive {
                     let (x, y) = self.to_screen(coord.col, coord.row);
                     rectangle(Game::get_color(gen), [x, y,
@@ -511,9 +473,7 @@ impl Game {
                         self.cell.get_height(&self.cam)],
                               c.transform, g);
                 }
-
             }
-
         }
 
         if self.show_grid {
@@ -522,15 +482,11 @@ impl Game {
 
         self.draw_borders(&c, g);
         self.draw_hud(&c, g);
-
     }
-
 }
 
 
 fn main() {
-
     let mut game = Game::new(1024.0, 768.0);
     game.event_dispatcher();
-
 }
