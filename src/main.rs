@@ -122,7 +122,7 @@ impl Game {
 
                         Event::Update(_) => {
                             if self.cur_state == State::Working {
-                                if Instant::now() - last_iter_time >= Duration::from_millis(3) {
+                                if !self.render || Instant::now() - last_iter_time >= Duration::from_millis(3) {
                                     self.engine.one_iteration();
                                     last_iter_time = Instant::now();
                                 }
@@ -145,6 +145,9 @@ impl Game {
                             self.show_grid = !self.show_grid;
                         }
 
+                        Event::Input(Input::Press(Button::Mouse(MouseButton::Left))) => {
+                            self.cur_state = State::Draw;
+                        }
 
                         Event::Input(Input::Release(Button::Mouse(MouseButton::Left))) => {
                             if last_pos.is_some() {
@@ -162,6 +165,7 @@ impl Game {
                             last_pos = Some([x, y]);
                         }
 
+                        // movements control ->
                         Event::Input(Input::Press(Button::Keyboard(Key::Right))) => {
                             self.cam.move_right();
                         }
@@ -193,6 +197,7 @@ impl Game {
                         Event::Input(Input::Release(Button::Keyboard(Key::Down))) => {
                             self.cam.reset_move_step();
                         }
+                        // movements control <-
 
                         // zoom out ->
                         Event::Input(Input::Press(Button::Keyboard(Key::NumPadMinus))) => {
@@ -228,10 +233,6 @@ impl Game {
 
                         }
 
-                        Event::Input(Input::Press(Button::Mouse(MouseButton::Left))) => {
-                            self.cur_state = State::Draw;
-                        }
-
                         _ => {}
                     }
                 }
@@ -243,7 +244,6 @@ impl Game {
 
     fn born_or_kill(&mut self, kill_alive: bool, x: f64, y: f64) {
         let (col, row) = self.to_logical(x, y);
-
         let board = self.engine.get_board_mut();
 
         if kill_alive && board.is_alive(col, row) {
@@ -315,6 +315,9 @@ impl Game {
     }
 
     fn draw_grid(&self, c: &Context, g: &mut GlGraphics) {
+
+        // TODO: Refactor
+
         let grid_width = self.cell.get_width(&self.cam);
         let grid_height = self.cell.get_height(&self.cam);
 
@@ -416,6 +419,11 @@ impl Game {
              &format!("iteration {}", self.engine.cur_iteration()),
              &mut self.resources.font,
              c.trans(10.0, 20.0).transform, g);
+
+        text(GREEN, 15,
+             &format!("population {}", self.engine.get_board().get_population()),
+             &mut self.resources.font,
+             c.trans(150.0, 20.0).transform, g);
     }
 
     fn get_color(gen: usize) -> [f32; 4] {
