@@ -8,8 +8,10 @@ extern crate find_folder;
 mod board;
 mod engine;
 mod cam;
+mod structs;
 
 use cam::Cam;
+use structs::{CellProp, GameWindow};
 
 use find_folder::Search;
 use piston_window::{OpenGL, Context, text, clear, rectangle, line,
@@ -21,8 +23,6 @@ use opengl_graphics::glyph_cache::GlyphCache;
 
 use engine::Engine;
 use board::{Board, CellDesc};
-use std::cell::RefCell;
-use std::rc::Rc;
 use std::time::{Instant, Duration};
 
 const OPENGL: piston_window::OpenGL = OpenGL::V3_2;
@@ -46,76 +46,6 @@ struct Resources {
 }
 
 
-struct CellProp {
-    cell_width: f64,
-    cell_height: f64,
-}
-
-impl CellProp {
-    pub fn new(cell_width: f64, cell_height: f64) -> Self {
-        CellProp { cell_width: cell_width, cell_height: cell_height }
-    }
-
-    #[inline]
-    pub fn get_width(&self, cam: &Cam) -> f64 {
-        self.cell_width * cam.get_scale()
-    }
-
-    #[inline]
-    pub fn get_height(&self, cam: &Cam) -> f64 {
-        self.cell_height * cam.get_scale()
-    }
-
-    #[inline]
-    pub fn get_half_width(&self, cam: &Cam) -> f64 {
-        0.5 * self.get_width(&cam)
-    }
-
-    #[inline]
-    pub fn get_half_height(&self, cam: &Cam) -> f64 {
-        0.5 * self.get_height(&cam)
-    }
-}
-
-
-struct GameWindow {
-
-    window: Rc<RefCell<PistonWindow>>,
-
-    width: f64,
-    height: f64,
-}
-
-
-impl GameWindow {
-
-    #[inline]
-    pub fn get_width(&self) -> f64 {
-        self.width
-    }
-
-    #[inline]
-    pub fn get_height(&self) -> f64 {
-        self.height
-    }
-
-    #[inline]
-    pub fn get_half_width(&self) -> f64 {
-        0.5 * self.get_width()
-    }
-
-    #[inline]
-    pub fn get_half_height(&self) -> f64 {
-        0.5 * self.get_height()
-    }
-
-    #[inline]
-    pub fn get_window(&self) -> &Rc<RefCell<PistonWindow>> {
-        &self.window
-    }
-
-}
-
 struct Game {
 
     window: GameWindow,
@@ -125,6 +55,7 @@ struct Game {
     acceleration: f64,
 
     show_grid: bool,
+    render: bool,
 
     engine: Engine,
     cam: Cam,
@@ -149,8 +80,7 @@ impl Game {
 
         Game {
 
-            window: GameWindow{width: width, height: height,
-                window: Rc::new(RefCell::new(window))},
+            window: GameWindow::new(width, height, window),
 
             cell: CellProp::new(10.0, 10.0),
 
@@ -160,6 +90,9 @@ impl Game {
 
             // show grid
             show_grid: true,
+
+            // enable/disable rendering
+            render: true,
 
             engine: Engine::new(game_board),
             cam: Cam::new(0.0, 0.0, 1.0),
@@ -206,6 +139,8 @@ impl Game {
                             // pause/unpause
                             if self.cur_state == State::Working {
                                 self.cur_state = State::Paused;
+                                // always enable rendering in pause mode
+                                self.render = true;
                             } else {
                                 self.cur_state = State::Working;
                             }
@@ -215,6 +150,7 @@ impl Game {
                             // show/hide grid
                             self.show_grid = !self.show_grid;
                         }
+
 
                         Event::Input(Input::Release(Button::Mouse(MouseButton::Left))) => {
                             if last_pos.is_some() {
@@ -282,6 +218,11 @@ impl Game {
                                 let board = self.engine.create_random(0.2);
                                 self.engine.set_board(board);
                             }
+                            else {
+                                // otherwise enable/disable rendering
+                                self.render = !self.render;
+                            }
+
                         }
 
                         Event::Input(Input::Press(Button::Mouse(MouseButton::Left))) => {
@@ -489,27 +430,32 @@ impl Game {
     }
 
     fn paint(&mut self, c: Context, g: &mut GlGraphics) {
+
         clear([0.0, 0.0, 0.0, 1.0], g);
 
-        {
-            let board = self.engine.get_board();
+        if self.render {
+            {
+                let board = self.engine.get_board();
 
-            for CellDesc { coord, gen, is_alive, .. } in board.into_iter() {
-                if is_alive {
-                    let (x, y) = self.to_screen(coord.col, coord.row);
-                    rectangle(Game::get_color(gen), [x, y,
-                        self.cell.get_width(&self.cam),
-                        self.cell.get_height(&self.cam)],
-                              c.transform, g);
+                for CellDesc { coord, gen, is_alive, .. } in board.into_iter() {
+                    if is_alive {
+                        let (x, y) = self.to_screen(coord.col, coord.row);
+                        rectangle(Game::get_color(gen), [x, y,
+                            self.cell.get_width(&self.cam),
+                            self.cell.get_height(&self.cam)],
+                                  c.transform, g);
+                    }
                 }
             }
+
+            if self.show_grid {
+                self.draw_grid(&c, g);
+            }
+
+            self.draw_borders(&c, g);
         }
 
-        if self.show_grid {
-            self.draw_grid(&c, g);
-        }
-
-        self.draw_borders(&c, g);
+        // hud is always visible
         self.draw_hud(&c, g);
     }
 }
