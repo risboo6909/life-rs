@@ -31,6 +31,24 @@ pub struct CellDesc {
     pub new_line: bool,
 }
 
+
+trait BoardInternal {
+
+    fn get_cell(col: usize, row: usize) -> Cell;
+    fn set_cell(col: usize, row: usize, val: Cell);
+
+}
+
+
+struct HashBased {
+
+}
+
+struct SymVecBased {
+
+}
+
+
 pub struct Board {
     cells: HashMap<(isize, isize), Cell>,
 
