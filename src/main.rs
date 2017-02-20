@@ -9,6 +9,7 @@ mod board;
 mod engine;
 mod cam;
 mod structs;
+mod symvec;
 
 use cam::Cam;
 use structs::{CellProp, GameWindow};
