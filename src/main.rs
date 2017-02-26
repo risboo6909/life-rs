@@ -124,7 +124,7 @@ impl Game {
                         Event::Update(_) => {
                             if self.cur_state == State::Working {
                                 if !self.render || Instant::now() - last_iter_time >= Duration::from_millis(3) {
-                                    self.engine.one_iteration();
+                                    self.engine.iterations(1);
                                     last_iter_time = Instant::now();
                                 }
                             }
@@ -425,6 +425,11 @@ impl Game {
              &format!("population {}", self.engine.get_board().get_population()),
              &mut self.resources.font,
              c.trans(150.0, 20.0).transform, g);
+
+        text(GREEN, 15,
+             &format!("update time {:.*}", 2, self.engine.get_last_iter_time()),
+             &mut self.resources.font,
+             c.trans(320.0, 20.0).transform, g);
     }
 
     fn get_color(gen: usize) -> [f32; 4] {

@@ -1,4 +1,5 @@
 extern crate rand;
+extern crate time;
 
 use ::board::Board;
 use ::board::CellDesc;
@@ -8,6 +9,7 @@ use self::rand::distributions::{IndependentSample, Range};
 pub struct Engine {
     pub board: Board,
     pub iteration: usize,
+    pub last_iter_time: f64,
 }
 
 
@@ -15,7 +17,8 @@ impl Engine {
     pub fn new(new_board: Board) -> Self {
         Engine {
             board: new_board,
-            iteration: 0
+            iteration: 0,
+            last_iter_time: 0f64
         }
     }
 
@@ -23,6 +26,10 @@ impl Engine {
 
     pub fn cur_iteration(&self) -> usize {
         self.iteration
+    }
+
+    pub fn get_last_iter_time(&self) -> f64 {
+        self.last_iter_time
     }
 
     pub fn get_board(&self) -> &Board {
@@ -96,9 +103,12 @@ impl Engine {
         self.iteration += 1;
     }
 
-    pub fn iterations(&mut self, n: u64) {
+    pub fn iterations(&mut self, n: u64) -> f64 {
+        let st = time::precise_time_s();
         for _ in 0..n {
             self.one_iteration();
         }
+        self.last_iter_time = time::precise_time_s() - st;
+        self.last_iter_time
     }
 }
