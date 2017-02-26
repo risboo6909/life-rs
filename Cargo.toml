@@ -6,5 +6,6 @@ authors = ["risboo6909 <ttyv00@gmail.com"]
 [dependencies]
 piston_window = "0.60.0"
 piston2d-opengl_graphics = "0.36.1"
-find_folder = "*"
-rand = "*"
+find_folder = "0.3.0"
+rand = "0.3.15"
+time = "0.1.36"
