@@ -31,26 +31,43 @@ pub struct CellDesc {
     pub new_line: bool,
 }
 
+pub trait BoardInternal {
+    fn get_cell(&self, col: isize, row: isize) -> Option<&Cell>;
+    fn set_cell(&mut self, col: isize, row: isize, val: Cell);
+    fn rm_cell(&mut self, col: isize, row: isize);
+    fn get_iter(&self) -> Iter<(isize, isize), Cell>;
+}
 
-trait BoardInternal {
+pub struct HashBased {
+    cells: HashMap<(isize, isize), Cell>
+}
 
-    fn get_cell(col: usize, row: usize) -> Cell;
-    fn set_cell(col: usize, row: usize, val: Cell);
+impl BoardInternal for HashBased {
+
+    fn get_cell(&self, col: isize, row: isize) -> Option<&Cell> {
+        self.cells.get(&(col, row))
+    }
+
+    fn set_cell(&mut self, col: isize, row: isize, val: Cell) {
+        self.cells.insert((col, row), val);
+    }
+
+    fn rm_cell(&mut self, col: isize, row: isize) {
+        self.cells.remove(&(col, row));
+    }
+
+    fn get_iter(&self) -> Iter<(isize, isize), Cell> {
+        self.cells.iter()
+    }
 
 }
 
-
-struct HashBased {
-
-}
-
-struct SymVecBased {
+pub struct SymVecBased {
 
 }
 
-
-pub struct Board {
-    cells: HashMap<(isize, isize), Cell>,
+pub struct Board<'a> {
+    cells: Box<BoardInternal + 'a>,
 
     population: usize,
 
@@ -61,10 +78,41 @@ pub struct Board {
     half_rows: Option<isize>,
 }
 
-impl Board {
-    pub fn new(width: Option<usize>, height: Option<usize>) -> Board {
+#[inline]
+fn cycle(x: isize, min_val: isize, max_val: isize) -> isize {
+    // TODO: add description
+
+    let cnt = max_val - min_val;
+
+    assert!(cnt > 0);
+
+    if x < min_val {
+        max_val - (min_val - x) % (cnt + 1)
+    } else if x > max_val - 1 {
+        min_val + (x - max_val) % cnt
+    } else {
+        x
+    }
+}
+
+#[inline]
+fn bound_coordinate(size: Option<isize>, coord: isize) -> isize {
+    match size {
+        Some(x) => {
+            if coord >= x || coord < -x {
+                cycle(coord, -x, x)
+            } else { coord }
+        },
+
+        None => coord
+    }
+}
+
+impl<'a> Board<'a> {
+
+    pub fn new(width: Option<usize>, height: Option<usize>) -> Board<'a> {
         Board {
-            cells: HashMap::new(),
+            cells: Box::new(HashBased{cells: HashMap::new()}),
             population: 0,
             cols: width,
             rows: height,
@@ -74,49 +122,19 @@ impl Board {
     }
 
     #[inline]
-    fn cycle(x: isize, min_val: isize, max_val: isize) -> isize {
-        // TODO: add description
-
-        let cnt = max_val - min_val;
-
-        assert!(cnt > 0);
-
-        if x < min_val {
-            max_val - (min_val - x) % (cnt + 1)
-        } else if x > max_val - 1 {
-            min_val + (x - max_val) % cnt
-        } else {
-            x
-        }
-    }
-
-    #[inline]
-    fn bound_coordinate(size: Option<isize>, coord: isize) -> isize {
-        match size {
-            Some(x) => {
-                if coord >= x || coord < -x {
-                    Board::cycle(coord, -x, x)
-                } else { coord }
-            },
-
-            None => coord
-        }
-    }
-
-    #[inline]
     fn constrain_board(&self, col: isize, row: isize) -> (isize, isize) {
         // ensure cell coordinates lie inside limits
 
-        let col = Board::bound_coordinate(self.half_cols, col);
-        let row = Board::bound_coordinate(self.half_rows, row);
+        let col = bound_coordinate(self.half_cols, col);
+        let row = bound_coordinate(self.half_rows, row);
 
         (col, row)
     }
 
     fn ensure_cell(&mut self, col: isize, row: isize) {
-        let coords = self.constrain_board(col, row);
-        if self.cells.get(&coords) == None {
-            self.cells.insert(coords, Cell::Empty);
+        let (col, row) = self.constrain_board(col, row);
+        if self.cells.get_cell(col, row) == None {
+            self.cells.set_cell(col, row, Cell::Empty);
         }
     }
 
@@ -138,9 +156,9 @@ impl Board {
             self.ensure_cell(col, row + 1);
             self.ensure_cell(col - 1, row + 1);
 
-            let coords = self.constrain_board(col, row);
+            let (col, row) = self.constrain_board(col, row);
             self.population += 1;
-            self.cells.insert(coords, Cell::Occupied { gen: gen });
+            self.cells.set_cell(col, row, Cell::Occupied { gen: gen });
         }
     }
 
@@ -150,9 +168,9 @@ impl Board {
 
     #[inline]
     pub fn kill_at(&mut self, col: isize, row: isize) {
-        let coords = self.constrain_board(col, row);
+        let (col, row) = self.constrain_board(col, row);
         self.population -= 1;
-        self.cells.remove(&coords);
+        self.cells.rm_cell(col, row);
     }
 
     #[inline]
@@ -162,7 +180,8 @@ impl Board {
 
     pub fn get_cell(&self, col: isize, row: isize) -> Cell {
         // if cell is not yet initialized it is considered as free
-        match self.cells.get(&self.constrain_board(col, row)) {
+        let (col, row) = self.constrain_board(col, row);
+        match self.cells.get_cell(col, row) {
             Some(x) => {
                 if let &Cell::Occupied { gen } = x {
                     return *x
@@ -214,20 +233,20 @@ impl Board {
     }
 }
 
-impl<'a> IntoIterator for &'a Board {
+impl<'a> IntoIterator for &'a Board<'a> {
     type Item = CellDesc;
     type IntoIter = BoardIntoIterator<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
         BoardIntoIterator {
             board: &self,
-            cell_iter: Box::new(self.cells.iter())
+            cell_iter: Box::new(self.cells.get_iter())
         }
     }
 }
 
 pub struct BoardIntoIterator<'a> {
-    board: &'a Board,
+    board: &'a Board<'a>,
     cell_iter: Box<Iter<'a, (isize, isize), Cell>>,
 }
 
@@ -327,27 +346,27 @@ fn test_glyder() {
 
 #[test]
 fn test_cycle() {
-    assert_eq!(Board::cycle(0, -5, 5), 0);
-    assert_eq!(Board::cycle(-5, -5, 5), -5);
-    assert_eq!(Board::cycle(5, -5, 5), -5);
-    assert_eq!(Board::cycle(6, -5, 5), -4);
-    assert_eq!(Board::cycle(-6, -5, 5), 4);
-    assert_eq!(Board::cycle(-7, -5, 5), 3);
+    assert_eq!(cycle(0, -5, 5), 0);
+    assert_eq!(cycle(-5, -5, 5), -5);
+    assert_eq!(cycle(5, -5, 5), -5);
+    assert_eq!(cycle(6, -5, 5), -4);
+    assert_eq!(cycle(-6, -5, 5), 4);
+    assert_eq!(cycle(-7, -5, 5), 3);
 
-    assert_eq!(Board::cycle(0, 0, 5), 0);
-    assert_eq!(Board::cycle(-1, 0, 5), 4);
-    assert_eq!(Board::cycle(-2, 0, 5), 3);
-    assert_eq!(Board::cycle(2, 0, 5), 2);
-    assert_eq!(Board::cycle(5, 0, 5), 0);
-    assert_eq!(Board::cycle(6, 0, 5), 1);
+    assert_eq!(cycle(0, 0, 5), 0);
+    assert_eq!(cycle(-1, 0, 5), 4);
+    assert_eq!(cycle(-2, 0, 5), 3);
+    assert_eq!(cycle(2, 0, 5), 2);
+    assert_eq!(cycle(5, 0, 5), 0);
+    assert_eq!(cycle(6, 0, 5), 1);
 
-    assert_eq!(Board::cycle(5, 5, 6), 5);
-    assert_eq!(Board::cycle(6, 5, 6), 5);
-    assert_eq!(Board::cycle(4, 5, 6), 5);
+    assert_eq!(cycle(5, 5, 6), 5);
+    assert_eq!(cycle(6, 5, 6), 5);
+    assert_eq!(cycle(4, 5, 6), 5);
 
-    assert_eq!(Board::cycle(-5, -5, -4), -5);
-    assert_eq!(Board::cycle(-4, -5, -4), -5);
-    assert_eq!(Board::cycle(-6, -5, -4), -5);
+    assert_eq!(cycle(-5, -5, -4), -5);
+    assert_eq!(cycle(-4, -5, -4), -5);
+    assert_eq!(cycle(-6, -5, -4), -5);
 }
 
 #[test]

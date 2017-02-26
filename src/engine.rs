@@ -1,22 +1,23 @@
 extern crate rand;
 extern crate time;
 
-use ::board::Board;
+use ::board::{Board, BoardInternal, HashBased, SymVecBased};
 use ::board::CellDesc;
 use self::rand::distributions::{IndependentSample, Range};
 
 
-pub struct Engine {
-    pub board: Board,
+pub struct Engine<'a> {
+    pub board: Board<'a>,
     pub iteration: usize,
     pub last_iter_time: f64,
 }
 
 
-impl Engine {
-    pub fn new(new_board: Board) -> Self {
+impl<'a> Engine<'a> {
+
+    pub fn new(cols: Option<usize>, rows: Option<usize>) -> Self {
         Engine {
-            board: new_board,
+            board: Board::new(cols, rows),
             iteration: 0,
             last_iter_time: 0f64
         }
@@ -36,15 +37,16 @@ impl Engine {
         &self.board
     }
 
-    pub fn set_board(&mut self, board: Board) {
+    pub fn set_board(&mut self, board: Board<'a>) {
         self.board = board;
     }
 
-    pub fn get_board_mut(&mut self) -> &mut Board {
+    pub fn get_board_mut(&mut self) -> &mut Board<'a> {
         &mut self.board
     }
 
-    pub fn create_random(&self, p: f64) -> Board {
+    pub fn create_random(&self, p: f64) -> Board<'a> {
+
         let mut board = Board::new(self.board.get_cols(), self.board.get_rows());
 
         let cols = self.board.get_cols();

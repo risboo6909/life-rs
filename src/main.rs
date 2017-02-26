@@ -25,6 +25,8 @@ use opengl_graphics::glyph_cache::GlyphCache;
 use engine::Engine;
 use board::{Board, CellDesc};
 use std::time::{Instant, Duration};
+use std::marker::PhantomData;
+use std::cell::Cell;
 
 const OPENGL: piston_window::OpenGL = OpenGL::V3_2;
 
@@ -47,7 +49,7 @@ struct Resources {
 }
 
 
-struct Game {
+struct Game<'a,> {
 
     window: GameWindow,
     cell: CellProp,
@@ -55,16 +57,17 @@ struct Game {
     show_grid: bool,
     render: bool,
 
-    engine: Engine,
+    engine: Engine<'a>,
     cam: Cam,
     cur_state: State,
 
     resources: Resources,
+
 }
 
 
-impl Game {
-    fn new(width: f64, height: f64) -> Game {
+impl<'a> Game<'a> {
+    fn new(width: f64, height: f64) -> Game<'a> {
         let window: PistonWindow = WindowSettings::new(
             "My Rust Life",
             [width as u32, height as u32]
@@ -73,8 +76,6 @@ impl Game {
             .exit_on_esc(true)
             .build()
             .unwrap();
-
-        let game_board = Board::new(Some(200), Some(200));
 
         Game {
 
@@ -88,7 +89,7 @@ impl Game {
             // enable/disable rendering
             render: true,
 
-            engine: Engine::new(game_board),
+            engine: Engine::new(Some(200), Some(200)),
 
             cam: Cam::new(0.0, 0.0),
 
