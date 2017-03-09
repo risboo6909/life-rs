@@ -4,8 +4,8 @@ version = "0.1.0"
 authors = ["risboo6909 <ttyv00@gmail.com"]
 
 [dependencies]
-piston_window = "0.60.0"
-piston2d-opengl_graphics = "0.36.1"
-find_folder = "0.3.0"
-rand = "0.3.15"
-time = "0.1.36"
+piston_window = "0.60.*"
+piston2d-opengl_graphics = "0.36.*"
+find_folder = "0.3.*"
+rand = "0.3.*"
+time = "0.1.*"
