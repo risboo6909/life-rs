@@ -1,4 +1,4 @@
-/// The Gmae of Life is my first experimental Rust project
+/// The Game of Life is my first experimental Rust project
 /// to learn base features of the language.
 
 extern crate piston_window;
@@ -9,7 +9,6 @@ mod board;
 mod engine;
 mod cam;
 mod structs;
-mod symvec;
 
 use cam::Cam;
 use structs::{CellProp, GameWindow};

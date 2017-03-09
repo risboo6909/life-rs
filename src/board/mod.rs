@@ -6,9 +6,15 @@
 /// let mut my_board = Board::new(Some(30), Some(30));
 /// my_board.born_at(20, 20);
 /// ```
+///
 
-use std::collections::HashMap;
+pub mod symvec;
+pub mod hashed;
+
 use std::collections::hash_map::Iter;
+
+use self::symvec::SymVec;
+use self::hashed::{HashBased,new};
 
 
 #[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -38,32 +44,8 @@ pub trait BoardInternal {
     fn get_iter(&self) -> Iter<(isize, isize), Cell>;
 }
 
-pub struct HashBased {
-    cells: HashMap<(isize, isize), Cell>
-}
-
-impl BoardInternal for HashBased {
-
-    fn get_cell(&self, col: isize, row: isize) -> Option<&Cell> {
-        self.cells.get(&(col, row))
-    }
-
-    fn set_cell(&mut self, col: isize, row: isize, val: Cell) {
-        self.cells.insert((col, row), val);
-    }
-
-    fn rm_cell(&mut self, col: isize, row: isize) {
-        self.cells.remove(&(col, row));
-    }
-
-    fn get_iter(&self) -> Iter<(isize, isize), Cell> {
-        self.cells.iter()
-    }
-
-}
-
 pub struct SymVecBased {
-
+    cells: SymVec<SymVec<Cell>>
 }
 
 pub struct Board<'a> {
@@ -110,9 +92,9 @@ fn bound_coordinate(size: Option<isize>, coord: isize) -> isize {
 
 impl<'a> Board<'a> {
 
-    pub fn new(width: Option<usize>, height: Option<usize>) -> Board<'a> {
+    pub fn new(cells: Box<BoardInternal>, width: Option<usize>, height: Option<usize>) -> Board<'a> {
         Board {
-            cells: Box::new(HashBased{cells: HashMap::new()}),
+            cells: cells,
             population: 0,
             cols: width,
             rows: height,
