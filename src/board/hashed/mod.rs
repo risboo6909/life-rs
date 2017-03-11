@@ -1,10 +1,39 @@
 use std::collections::HashMap;
 use std::collections::hash_map::Iter;
 
-use ::board::{BoardInternal, Cell};
+use ::board::{BoardInternal, Cell, CellIterType};
 
 pub struct HashBased {
     cells: HashMap<(isize, isize), Cell>
+}
+
+pub struct CellsIterator<'a> {
+    iter: Iter<'a, (isize, isize), Cell>
+}
+
+impl<'a> Iterator for CellsIterator<'a> {
+
+    type Item = CellIterType;
+
+    fn next(&mut self) -> Option<CellIterType> {
+        match self.iter.next() {
+            Some(e) => {
+                let &(col, row) = e.0;
+                Some((col, row, *e.1))
+            }
+            None => None
+        }
+    }
+
+}
+
+impl<'a> IntoIterator for &'a HashBased {
+    type Item = CellIterType;
+    type IntoIter = CellsIterator<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        CellsIterator{iter: self.cells.iter()}
+    }
 }
 
 impl BoardInternal for HashBased {
@@ -21,12 +50,12 @@ impl BoardInternal for HashBased {
         self.cells.remove(&(col, row));
     }
 
-    fn get_iter(&self) -> Iter<(isize, isize), Cell> {
-        self.cells.iter()
+    fn get_iter<'a>(&'a self) -> Box<Iterator<Item=CellIterType> + 'a> {
+        Box::new(IntoIterator::into_iter(self))
     }
 
 }
 
 pub fn new() -> Box<BoardInternal> {
-    Box::new(HashBased {cells: HashMap::new()})
+    Box::new(HashBased{cells: HashMap::new()})
 }

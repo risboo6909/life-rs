@@ -35,11 +35,14 @@ pub struct CellDesc {
     pub new_line: bool,
 }
 
+pub type CellIterType = (isize, isize, Cell);
+
 pub trait BoardInternal {
     fn get_cell(&self, col: isize, row: isize) -> Option<&Cell>;
     fn set_cell(&mut self, col: isize, row: isize, val: Cell);
     fn rm_cell(&mut self, col: isize, row: isize);
-    fn get_iter(&self) -> Iter<(isize, isize), Cell>;
+
+    fn get_iter<'a>(&'a self) -> Box<Iterator<Item=CellIterType> + 'a>;
 }
 
 pub struct Board<'a> {
@@ -223,7 +226,7 @@ impl<'a> IntoIterator for &'a Board<'a> {
 
 pub struct BoardIntoIterator<'a> {
     board: &'a Board<'a>,
-    cell_iter: Box<Iter<'a, (isize, isize), Cell>>,
+    cell_iter: Box<Iterator<Item=CellIterType> + 'a>
 }
 
 impl<'a> Iterator for BoardIntoIterator<'a> {
@@ -231,9 +234,10 @@ impl<'a> Iterator for BoardIntoIterator<'a> {
 
     fn next(&mut self) -> Option<CellDesc> {
         match self.cell_iter.next() {
+
             Some(e) => {
-                let &(col, row) = e.0;
-                let &cell = e.1;
+
+                let (col, row, cell) = e;
 
                 let gen = match cell {
                     Cell::Occupied { gen } => gen,
