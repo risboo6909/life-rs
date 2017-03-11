@@ -26,18 +26,20 @@ impl<'a> Iterator for CellsIterator<'a> {
 
             None => {
 
-                self.row += 1;
+                while self.row < (self.cells.len_pos() - 1) as isize {
+                    self.row += 1;
 
-                if self.row < self.cells.len_pos() as isize {
-                    self.col = -(self.cells[self.row].len_neg() as isize);
+                    if self.cells[self.row].len() > 0 {
+                        self.col = -(self.cells[self.row].len_neg() as isize);
 
-                    self.iter = Box::new(self.cells[self.row].into_iter());
-                    self.iter.next();
-                    Some((self.col, self.row, self.cells[self.row][self.col]))
+                        self.iter = Box::new(self.cells[self.row].into_iter());
+                        self.iter.next();
 
-                } else {
-                    None
+                        return Some((self.col, self.row, self.cells[self.row][self.col]));
+                    }
                 }
+
+                None
             }
         }
     }
@@ -62,8 +64,9 @@ impl<'a> IntoIterator for &'a SymVecBased {
 }
 
 impl BoardInternal for SymVecBased {
+
     fn get_cell(&self, col: isize, row: isize) -> Option<&Cell> {
-        if self.cells.is_available(row) || self.cells[row].is_available(col) {
+        if !self.cells.is_available(row) || !self.cells[row].is_available(col) {
             None
         } else {
             Some(&self.cells[row][col])

@@ -3,6 +3,7 @@ extern crate time;
 
 use ::board::{Board, CellDesc};
 use ::board::hashed::new as new_hashed;
+use ::board::vect::new as new_vect;
 use self::rand::distributions::{IndependentSample, Range};
 
 
@@ -17,7 +18,7 @@ impl<'a> Engine<'a> {
 
     pub fn new(cols: Option<usize>, rows: Option<usize>) -> Self {
         Engine {
-            board: Board::new(new_hashed(), cols, rows),
+            board: Board::new(new_vect(), cols, rows),
             iteration: 0,
             last_iter_time: 0f64
         }
@@ -47,7 +48,7 @@ impl<'a> Engine<'a> {
 
     pub fn create_random(&self, p: f64) -> Board<'a> {
 
-        let mut board = Board::new(new_hashed(), self.board.get_cols(), self.board.get_rows());
+        let mut board = Board::new(new_vect(), self.board.get_cols(), self.board.get_rows());
 
         let cols = self.board.get_cols();
         let rows = self.board.get_rows();
@@ -70,7 +71,7 @@ impl<'a> Engine<'a> {
     }
 
     pub fn one_iteration(&mut self) {
-        let mut next_gen = Board::new(new_hashed(), self.board.get_cols(), self.board.get_rows());
+        let mut next_gen = Board::new(new_vect(), self.board.get_cols(), self.board.get_rows());
 
         for CellDesc { coord, gen, is_alive, .. } in self.board.into_iter() {
             let col = coord.col;
