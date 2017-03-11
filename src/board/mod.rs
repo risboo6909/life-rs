@@ -14,7 +14,7 @@ pub mod hashed;
 use std::collections::hash_map::Iter;
 
 use self::symvec::SymVec;
-use self::hashed::{HashBased,new};
+use self::hashed::{HashBased,new as new_hashed};
 
 
 #[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -262,7 +262,7 @@ impl<'a> Iterator for BoardIntoIterator<'a> {
 
 #[test]
 fn test_board_ok() {
-    let mut my_board = Board::new(Some(10), Some(10));
+    let mut my_board = Board::new(new_hashed(), Some(10), Some(10));
 
     // set some existing cells
     my_board.born_at(0, 0);
@@ -290,7 +290,7 @@ fn test_board_ok() {
 
 #[test]
 fn test_board_iter() {
-    let mut my_board = Board::new(Some(10), Some(10));
+    let mut my_board = Board::new(new_hashed(), Some(10), Some(10));
 
     my_board.born_at(0, 0);
     my_board.born_at(1, 1);
@@ -311,7 +311,7 @@ fn test_board_iter() {
 
 #[test]
 fn test_glyder() {
-    let mut my_board = Board::new(Some(10), Some(10));
+    let mut my_board = Board::new(new_hashed(), Some(10), Some(10));
 
     my_board.born_at(0, 0);
     my_board.born_at(1, 1);
@@ -353,7 +353,7 @@ fn test_cycle() {
 
 #[test]
 fn test_restricted_board() {
-    let mut my_board = Board::new(Some(10), Some(10));
+    let mut my_board = Board::new(new_hashed(), Some(10), Some(10));
 
     my_board.born_at(5, 2);
     assert_eq!(my_board.is_alive(-5, 2), true);
