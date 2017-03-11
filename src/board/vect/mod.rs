@@ -18,6 +18,10 @@ impl BoardInternal for SymVecBased {
         unimplemented!()
     }
 
+    fn ensure_cell(&mut self, col: isize, row: isize) {
+        unimplemented!()
+    }
+
     fn rm_cell(&mut self, col: isize, row: isize) {
         unimplemented!()
     }

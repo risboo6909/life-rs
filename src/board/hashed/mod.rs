@@ -46,6 +46,12 @@ impl BoardInternal for HashBased {
         self.cells.insert((col, row), val);
     }
 
+    fn ensure_cell(&mut self, col: isize, row: isize) {
+        if self.get_cell(col, row) == None {
+            self.set_cell(col, row, Cell::Empty);
+        }
+    }
+
     fn rm_cell(&mut self, col: isize, row: isize) {
         self.cells.remove(&(col, row));
     }

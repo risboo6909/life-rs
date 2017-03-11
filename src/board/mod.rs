@@ -12,7 +12,7 @@ pub mod vect;
 pub mod hashed;
 
 use std::collections::hash_map::Iter;
-use self::hashed::{HashBased,new as new_hashed};
+use self::hashed::{HashBased, new as new_hashed};
 
 
 #[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -40,6 +40,7 @@ pub type CellIterType = (isize, isize, Cell);
 pub trait BoardInternal {
     fn get_cell(&self, col: isize, row: isize) -> Option<&Cell>;
     fn set_cell(&mut self, col: isize, row: isize, val: Cell);
+    fn ensure_cell(&mut self, col: isize, row: isize);
     fn rm_cell(&mut self, col: isize, row: isize);
 
     fn get_iter<'a>(&'a self) -> Box<Iterator<Item=CellIterType> + 'a>;
@@ -112,9 +113,7 @@ impl<'a> Board<'a> {
 
     fn ensure_cell(&mut self, col: isize, row: isize) {
         let (col, row) = self.constrain_board(col, row);
-        if self.cells.get_cell(col, row) == None {
-            self.cells.set_cell(col, row, Cell::Empty);
-        }
+        self.cells.ensure_cell(col, row);
     }
 
     pub fn born_at_gen(&mut self, col: isize, row: isize, gen: usize) {
