@@ -8,12 +8,10 @@
 /// ```
 ///
 
-pub mod symvec;
+pub mod vect;
 pub mod hashed;
 
 use std::collections::hash_map::Iter;
-
-use self::symvec::SymVec;
 use self::hashed::{HashBased,new as new_hashed};
 
 
@@ -42,10 +40,6 @@ pub trait BoardInternal {
     fn set_cell(&mut self, col: isize, row: isize, val: Cell);
     fn rm_cell(&mut self, col: isize, row: isize);
     fn get_iter(&self) -> Iter<(isize, isize), Cell>;
-}
-
-pub struct SymVecBased {
-    cells: SymVec<SymVec<Cell>>
 }
 
 pub struct Board<'a> {

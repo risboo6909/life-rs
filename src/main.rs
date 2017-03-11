@@ -24,7 +24,6 @@ use opengl_graphics::glyph_cache::GlyphCache;
 use engine::Engine;
 use board::{Board, CellDesc};
 use std::time::{Instant, Duration};
-use std::marker::PhantomData;
 use std::cell::Cell;
 
 const OPENGL: piston_window::OpenGL = OpenGL::V3_2;
