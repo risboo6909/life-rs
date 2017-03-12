@@ -25,11 +25,12 @@ pub struct Engine<'a> {
 impl<'a> Engine<'a> {
 
     pub fn new(cols: Option<usize>, rows: Option<usize>) -> Self {
+        let board_type = BoardType::SymVec;
         Engine {
-            board_type: BoardType::Hashed,
+            board_type: board_type,
             switch_inertia: 1,
             iters_from_prev_switch: 0,
-            board: Self::new_board(BoardType::Hashed, cols, rows),
+            board: Self::new_board(board_type, cols, rows),
             iteration: 0,
             last_iter_time: 0f64
         }
@@ -43,6 +44,28 @@ impl<'a> Engine<'a> {
             new_board = Board::new(new_vect(), cols, rows);
         }
         new_board
+    }
+
+    fn clone_board(&self, board_type: BoardType) -> Board<'a> {
+
+        let mut new_board = Self::new_board(board_type, self.board.get_cols(), self.board.get_rows());
+
+        let cols = self.board.get_cols();
+        let rows = self.board.get_rows();
+
+        if cols.is_some() && rows.is_some() {
+            for col in 0..cols.unwrap() {
+                for row in 0..rows.unwrap() {
+                    let gen = self.board.get_cell_gen(col as isize, row as isize);
+                    if gen > 0 {
+                        new_board.born_at_gen(col as isize, row as isize, gen);
+                    }
+                }
+            }
+        }
+
+        new_board
+
     }
 
     pub fn from_file() {}
@@ -99,30 +122,9 @@ impl<'a> Engine<'a> {
 
         let mut cells_checked = 0;
 
-        let mut min_col = <isize>::max_value();
-        let mut min_row = <isize>::max_value();
-        let mut max_col = <isize>::min_value();
-        let mut max_row = <isize>::min_value();
-
         for CellDesc { coord, gen, is_alive, .. } in self.board.into_iter() {
             let col = coord.col;
             let row = coord.row;
-
-            if col < min_col {
-                min_col = col;
-            }
-
-            if col > max_col {
-                max_col = col;
-            }
-
-            if row < min_row {
-                min_row = row;
-            }
-
-            if row > max_row {
-                max_row = row;
-            }
 
             cells_checked += 1;
 
@@ -153,34 +155,40 @@ impl<'a> Engine<'a> {
 
         self.board = next_gen;
 
-        if self.iters_from_prev_switch > self.switch_inertia {
+//        if self.iters_from_prev_switch > self.switch_inertia {
+//
+//            if self.board_type == BoardType::Hashed {
+//
+//                let density = (self.board.get_population() as f64) / (cells_checked as f64);
+//
+//                if self.switch_inertia < 512 {
+//                    self.switch_inertia *= 2;
+//                }
+//                self.iters_from_prev_switch = 0;
+//                println!("switched to symvec board");
+//                self.switch_board();
+//
+//            } else if self.board_type == BoardType::SymVec {
+//
+//                let density = (self.board.get_population() as f64) / (cells_checked as f64);
+//
+//                if density <= 0.04 {
+//                    if self.switch_inertia < 512 {
+//                        self.switch_inertia *= 2;
+//                    }
+//                    self.iters_from_prev_switch = 0;
+//                    println!("switched to hashed board");
+//                    self.switch_board();
+//                }
+//
+//            }
+//
+//        }
 
-            if self.board_type == BoardType::Hashed {
-
-                let density = (self.board.get_population() as f64) / (cells_checked as f64);
-
-                if self.switch_inertia < 512 {
-                    self.switch_inertia *= 2;
-                }
-                self.iters_from_prev_switch = 0;
-                println!("switched to symvec board");
-                self.switch_board();
-
-            } else if self.board_type == BoardType::SymVec {
-
-                let density = (self.board.get_population() as f64) / (cells_checked as f64);
-
-                if density <= 0.04 {
-                    if self.switch_inertia < 512 {
-                        self.switch_inertia *= 2;
-                    }
-                    self.iters_from_prev_switch = 0;
-                    println!("switched to hashed board");
-                    self.switch_board();
-                }
-
-            }
-
+        if (self.iteration % 100) == 0 {
+            println!("cleanup!");
+            let new_board = self.clone_board(self.board_type);
+            self.set_board(new_board);
         }
 
         self.iteration += 1;
@@ -191,29 +199,13 @@ impl<'a> Engine<'a> {
 
         // switch internal board representation hash<->symvec
 
-        let mut new_board;
         if self.board_type == BoardType::Hashed {
-            new_board = Self::new_board(BoardType::SymVec, self.board.get_cols(), self.board.get_rows());
             self.board_type = BoardType::SymVec;
         }  else {
-            new_board = Self::new_board(BoardType::Hashed, self.board.get_cols(), self.board.get_rows());
             self.board_type = BoardType::Hashed;
         }
 
-        // copy old board content
-        let cols = self.board.get_cols();
-        let rows = self.board.get_rows();
-
-        if cols.is_some() && rows.is_some() {
-            for col in 0..cols.unwrap() {
-                for row in 0..rows.unwrap() {
-                    let gen = self.board.get_cell_gen(col as isize, row as isize);
-                    if gen > 0 {
-                        new_board.born_at_gen(col as isize, row as isize, gen);
-                    }
-                }
-            }
-        }
+        let new_board = self.clone_board(self.board_type);
 
         self.set_board(new_board);
     }
