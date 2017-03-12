@@ -14,6 +14,8 @@ enum BoardType {
 
 pub struct Engine<'a> {
     board_type: BoardType,
+    switch_inertia: usize,
+    iters_from_prev_switch: usize,
     pub board: Board<'a>,
     pub iteration: usize,
     pub last_iter_time: f64,
@@ -25,6 +27,8 @@ impl<'a> Engine<'a> {
     pub fn new(cols: Option<usize>, rows: Option<usize>) -> Self {
         Engine {
             board_type: BoardType::Hashed,
+            switch_inertia: 1,
+            iters_from_prev_switch: 0,
             board: Self::new_board(BoardType::Hashed, cols, rows),
             iteration: 0,
             last_iter_time: 0f64
@@ -93,9 +97,34 @@ impl<'a> Engine<'a> {
         let mut next_gen = Self::new_board(self.board_type,
                                            self.board.get_cols(), self.board.get_rows());
 
+        let mut cells_checked = 0;
+
+        let mut min_col = <isize>::max_value();
+        let mut min_row = <isize>::max_value();
+        let mut max_col = <isize>::min_value();
+        let mut max_row = <isize>::min_value();
+
         for CellDesc { coord, gen, is_alive, .. } in self.board.into_iter() {
             let col = coord.col;
             let row = coord.row;
+
+            if col < min_col {
+                min_col = col;
+            }
+
+            if col > max_col {
+                max_col = col;
+            }
+
+            if row < min_row {
+                min_row = row;
+            }
+
+            if row > max_row {
+                max_row = row;
+            }
+
+            cells_checked += 1;
 
             // check game rules against current cell
             let neighbours = self.board.get_vicinity(col, row);
@@ -124,13 +153,38 @@ impl<'a> Engine<'a> {
 
         self.board = next_gen;
 
-        if self.board_type == BoardType::Hashed && self.board.get_population() > 1500 {
-            self.switch_board();
-        } else if self.board_type == BoardType::SymVec && self.board.get_population() <= 1500 {
-            self.switch_board();
+        if self.iters_from_prev_switch > self.switch_inertia {
+
+            if self.board_type == BoardType::Hashed {
+
+                let density = (self.board.get_population() as f64) / (cells_checked as f64);
+
+                if self.switch_inertia < 512 {
+                    self.switch_inertia *= 2;
+                }
+                self.iters_from_prev_switch = 0;
+                println!("switched to symvec board");
+                self.switch_board();
+
+            } else if self.board_type == BoardType::SymVec {
+
+                let density = (self.board.get_population() as f64) / (cells_checked as f64);
+
+                if density <= 0.04 {
+                    if self.switch_inertia < 512 {
+                        self.switch_inertia *= 2;
+                    }
+                    self.iters_from_prev_switch = 0;
+                    println!("switched to hashed board");
+                    self.switch_board();
+                }
+
+            }
+
         }
 
         self.iteration += 1;
+        self.iters_from_prev_switch += 1;
     }
 
     pub fn switch_board(&mut self) {
