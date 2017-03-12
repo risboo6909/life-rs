@@ -18,6 +18,7 @@ impl<'a> Iterator for CellsIterator<'a> {
     type Item = CellIterType;
 
     fn next(&mut self) -> Option<CellIterType> {
+
         match self.iter.next() {
             Some(e) => {
                 self.col += 1;
@@ -43,6 +44,7 @@ impl<'a> Iterator for CellsIterator<'a> {
             }
         }
     }
+
 }
 
 impl<'a> IntoIterator for &'a SymVecBased {

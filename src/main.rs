@@ -145,6 +145,11 @@ impl<'a> Game<'a> {
                             self.show_grid = !self.show_grid;
                         }
 
+                        Event::Input(Input::Press(Button::Keyboard(Key::S))) => {
+                            // switch board internal representation
+                            self.engine.switch_board();
+                        }
+
                         Event::Input(Input::Press(Button::Mouse(MouseButton::Left))) => {
                             self.cur_state = State::Draw;
                         }
@@ -426,7 +431,7 @@ impl<'a> Game<'a> {
              c.trans(150.0, 20.0).transform, g);
 
         text(GREEN, 15,
-             &format!("update time {:.*}", 2, self.engine.get_last_iter_time()),
+             &format!("update time {:.*}", 3, self.engine.get_last_iter_time()),
              &mut self.resources.font,
              c.trans(320.0, 20.0).transform, g);
     }

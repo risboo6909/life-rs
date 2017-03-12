@@ -6,8 +6,14 @@ use ::board::hashed::new as new_hashed;
 use ::board::vect::new as new_vect;
 use self::rand::distributions::{IndependentSample, Range};
 
+#[derive(PartialEq, Copy, Clone)]
+enum BoardType {
+    Hashed,
+    SymVec
+}
 
 pub struct Engine<'a> {
+    board_type: BoardType,
     pub board: Board<'a>,
     pub iteration: usize,
     pub last_iter_time: f64,
@@ -18,10 +24,21 @@ impl<'a> Engine<'a> {
 
     pub fn new(cols: Option<usize>, rows: Option<usize>) -> Self {
         Engine {
-            board: Board::new(new_vect(), cols, rows),
+            board_type: BoardType::Hashed,
+            board: Self::new_board(BoardType::Hashed, cols, rows),
             iteration: 0,
             last_iter_time: 0f64
         }
+    }
+
+    fn new_board(board_type: BoardType, cols: Option<usize>, rows: Option<usize>) -> Board<'a> {
+        let mut new_board;
+        if board_type == BoardType::Hashed {
+            new_board = Board::new(new_hashed(), cols, rows);
+        }  else {
+            new_board = Board::new(new_vect(), cols, rows);
+        }
+        new_board
     }
 
     pub fn from_file() {}
@@ -48,7 +65,8 @@ impl<'a> Engine<'a> {
 
     pub fn create_random(&self, p: f64) -> Board<'a> {
 
-        let mut board = Board::new(new_vect(), self.board.get_cols(), self.board.get_rows());
+        let mut board = Self::new_board(self.board_type,
+                                        self.board.get_cols(), self.board.get_rows());
 
         let cols = self.board.get_cols();
         let rows = self.board.get_rows();
@@ -71,7 +89,9 @@ impl<'a> Engine<'a> {
     }
 
     pub fn one_iteration(&mut self) {
-        let mut next_gen = Board::new(new_vect(), self.board.get_cols(), self.board.get_rows());
+
+        let mut next_gen = Self::new_board(self.board_type,
+                                           self.board.get_cols(), self.board.get_rows());
 
         for CellDesc { coord, gen, is_alive, .. } in self.board.into_iter() {
             let col = coord.col;
@@ -103,7 +123,45 @@ impl<'a> Engine<'a> {
         }
 
         self.board = next_gen;
+
+        if self.board_type == BoardType::Hashed && self.board.get_population() > 1500 {
+            self.switch_board();
+        } else if self.board_type == BoardType::SymVec && self.board.get_population() <= 1500 {
+            self.switch_board();
+        }
+
         self.iteration += 1;
+    }
+
+    pub fn switch_board(&mut self) {
+
+        // switch internal board representation hash<->symvec
+
+        let mut new_board;
+        if self.board_type == BoardType::Hashed {
+            new_board = Self::new_board(BoardType::SymVec, self.board.get_cols(), self.board.get_rows());
+            self.board_type = BoardType::SymVec;
+        }  else {
+            new_board = Self::new_board(BoardType::Hashed, self.board.get_cols(), self.board.get_rows());
+            self.board_type = BoardType::Hashed;
+        }
+
+        // copy old board content
+        let cols = self.board.get_cols();
+        let rows = self.board.get_rows();
+
+        if cols.is_some() && rows.is_some() {
+            for col in 0..cols.unwrap() {
+                for row in 0..rows.unwrap() {
+                    let gen = self.board.get_cell_gen(col as isize, row as isize);
+                    if gen > 0 {
+                        new_board.born_at_gen(col as isize, row as isize, gen);
+                    }
+                }
+            }
+        }
+
+        self.set_board(new_board);
     }
 
     pub fn iterations(&mut self, n: u64) -> f64 {
