@@ -5,6 +5,8 @@ use ::board::{Board, CellDesc};
 use ::board::hashed::new as new_hashed;
 use ::board::vect::new as new_vect;
 use self::rand::distributions::{IndependentSample, Range};
+use std::collections::HashMap;
+use std::collections::hash_map::Entry;
 
 #[derive(PartialEq, Copy, Clone)]
 enum BoardType {
@@ -14,7 +16,6 @@ enum BoardType {
 
 pub struct Engine<'a> {
     board_type: BoardType,
-    switch_inertia: usize,
     iters_from_prev_switch: usize,
     pub board: Board<'a>,
     pub iteration: usize,
@@ -22,14 +23,18 @@ pub struct Engine<'a> {
 }
 
 
+struct MinMax {
+    min: Option<isize>,
+    max: Option<isize>
+}
+
 impl<'a> Engine<'a> {
 
     pub fn new(cols: Option<usize>, rows: Option<usize>) -> Self {
-        let board_type = BoardType::SymVec;
+        let board_type = BoardType::Hashed;
         Engine {
             board_type: board_type,
-            switch_inertia: 1,
-            iters_from_prev_switch: 0,
+            iters_from_prev_switch: 512,
             board: Self::new_board(board_type, cols, rows),
             iteration: 0,
             last_iter_time: 0f64
@@ -122,11 +127,33 @@ impl<'a> Engine<'a> {
 
         let mut cells_checked = 0;
 
+        let mut density_table: HashMap<isize, MinMax> = HashMap::new();
+
         for CellDesc { coord, gen, is_alive, .. } in self.board.into_iter() {
+
             let col = coord.col;
             let row = coord.row;
 
-            cells_checked += 1;
+            if self.board_type == BoardType::Hashed {
+                // for hashed board we maintain a hash table of
+                // min and max coordinates of each row of the board
+                match density_table.entry(row) {
+                    Entry::Occupied(mut min_max_pair) => {
+                        if col < min_max_pair.get().min.unwrap_or(isize::max_value()) {
+                            let max = min_max_pair.get().max;
+                            min_max_pair.insert(MinMax{min: Some(col), max: max});
+                        } else if col > min_max_pair.get().max.unwrap_or(isize::min_value()) {
+                            let min = min_max_pair.get().min;
+                            min_max_pair.insert(MinMax{min: min, max: Some(col)});
+                        }
+                    },
+                    Entry::Vacant(entry) => {
+                        entry.insert(MinMax{min: None, max: None});
+                    },
+                }
+            } else {
+                cells_checked += 1;
+            }
 
             // check game rules against current cell
             let neighbours = self.board.get_vicinity(col, row);
@@ -155,38 +182,40 @@ impl<'a> Engine<'a> {
 
         self.board = next_gen;
 
-//        if self.iters_from_prev_switch > self.switch_inertia {
-//
-//            if self.board_type == BoardType::Hashed {
-//
-//                let density = (self.board.get_population() as f64) / (cells_checked as f64);
-//
-//                if self.switch_inertia < 512 {
-//                    self.switch_inertia *= 2;
-//                }
-//                self.iters_from_prev_switch = 0;
-//                println!("switched to symvec board");
-//                self.switch_board();
-//
-//            } else if self.board_type == BoardType::SymVec {
-//
-//                let density = (self.board.get_population() as f64) / (cells_checked as f64);
-//
-//                if density <= 0.04 {
-//                    if self.switch_inertia < 512 {
-//                        self.switch_inertia *= 2;
-//                    }
-//                    self.iters_from_prev_switch = 0;
-//                    println!("switched to hashed board");
-//                    self.switch_board();
-//                }
-//
-//            }
-//
-//        }
+        // compute density of hashed board
+        if self.board_type == BoardType::Hashed { ;
+            for (_, v) in density_table.iter() {
+                if let Some(x) = v.max {
+                    cells_checked += x;
+                }
+                if let Some(x) = v.min {
+                    cells_checked += x.abs();
+                }
+            }
+        }
 
-        if (self.iteration % 100) == 0 {
-            println!("cleanup!");
+        let density = (self.board.get_population() as f64) / (cells_checked as f64);
+
+        if density < 0.03 && self.board_type == BoardType::SymVec {
+            if self.iters_from_prev_switch > 512 {
+                self.iters_from_prev_switch = 0;
+                println!("switched to hashed board");
+                self.switch_board();
+            }
+        } else if density >= 0.03 && self.board_type == BoardType::Hashed {
+            if self.iters_from_prev_switch > 512 {
+                self.iters_from_prev_switch = 0;
+                println!("switched to symvec board");
+                self.switch_board();
+            }
+        }
+
+        //println!("density {}", density);
+        //println!("iter time {}", self.get_last_iter_time());
+
+        if (self.iteration % 1000) == 0 && self.board_type == BoardType::SymVec {
+            // rebuild vector based board once per 1000 iterations
+            // to improve performance by removing empty rows
             let new_board = self.clone_board(self.board_type);
             self.set_board(new_board);
         }

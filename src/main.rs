@@ -87,7 +87,7 @@ impl<'a> Game<'a> {
             // enable/disable rendering
             render: true,
 
-            engine: Engine::new(Some(200), Some(200)),
+            engine: Engine::new(Some(400), Some(400)),
 
             cam: Cam::new(0.0, 0.0),
 
@@ -228,7 +228,7 @@ impl<'a> Game<'a> {
                         Event::Input(Input::Press(Button::Keyboard(Key::R))) => {
                             // If in pause mode - fill board with a random pattern
                             if self.cur_state == State::Paused {
-                                let board = self.engine.create_random(0.2);
+                                let board = self.engine.create_random(0.3);
                                 self.engine.set_board(board);
                             }
                             else {
@@ -431,7 +431,7 @@ impl<'a> Game<'a> {
              c.trans(150.0, 20.0).transform, g);
 
         text(GREEN, 15,
-             &format!("update time {:.*}", 3, self.engine.get_last_iter_time()),
+             &format!("update time {:.*}", 5, self.engine.get_last_iter_time()),
              &mut self.resources.font,
              c.trans(320.0, 20.0).transform, g);
     }
