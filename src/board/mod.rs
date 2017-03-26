@@ -76,16 +76,10 @@ fn cycle(x: isize, min_val: isize, max_val: isize) -> isize {
 }
 
 #[inline]
-fn bound_coordinate(size: Option<isize>, coord: isize) -> isize {
-    match size {
-        Some(x) => {
-            if coord >= x || coord < -x {
-                cycle(coord, -x, x)
-            } else { coord }
-        },
-
-        None => coord
-    }
+fn bound_coordinate(left: isize, right: isize, coord: isize) -> isize {
+    if coord < left || coord >= right {
+        cycle(coord, left, right)
+    } else { coord }
 }
 
 impl<'a> Board<'a> {
@@ -103,12 +97,38 @@ impl<'a> Board<'a> {
 
     #[inline]
     fn constrain_board(&self, col: isize, row: isize) -> (isize, isize) {
+
         // ensure cell coordinates lie inside limits
 
-        let col = bound_coordinate(self.half_cols, col);
-        let row = bound_coordinate(self.half_rows, row);
+        let mut new_col = col;
+        let mut new_row = row;
 
-        (col, row)
+        let mut left: usize;
+        let mut right: usize;
+
+        if let Some(cols) = self.cols {
+            if cols % 2 == 0 {
+                left = cols / 2;
+                right = left;
+            } else {
+                left = (cols - 1) / 2;
+                right = left + 1
+            }
+            new_col = bound_coordinate(-(left as isize), right as isize, col);
+        }
+
+        if let Some(rows) = self.rows {
+            if rows % 2 == 0 {
+                left = rows / 2;
+                right = left;
+            } else {
+                left = (rows - 1) / 2;
+                right = left + 1
+            }
+            new_row = bound_coordinate(-(left as isize), right as isize, row)
+        }
+
+        (new_col, new_row)
     }
 
     fn ensure_cell(&mut self, col: isize, row: isize) {

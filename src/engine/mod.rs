@@ -8,6 +8,10 @@ use self::rand::distributions::{IndependentSample, Range};
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 
+const SWITCH_BOARD_INERTIA: usize = 128;
+const ITERATIONS_TO_CLEANUP: usize = 1000;
+
+
 #[derive(PartialEq, Copy, Clone)]
 enum BoardType {
     Hashed,
@@ -34,7 +38,7 @@ impl<'a> Engine<'a> {
         let board_type = BoardType::Hashed;
         Engine {
             board_type: board_type,
-            iters_from_prev_switch: 512,
+            iters_from_prev_switch: SWITCH_BOARD_INERTIA,
             board: Self::new_board(board_type, cols, rows),
             iteration: 0,
             last_iter_time: 0f64
@@ -183,7 +187,7 @@ impl<'a> Engine<'a> {
         self.board = next_gen;
 
         // compute density of hashed board
-        if self.board_type == BoardType::Hashed { ;
+        if self.board_type == BoardType::Hashed {
             for (_, v) in density_table.iter() {
                 if let Some(x) = v.max {
                     cells_checked += x;
@@ -197,13 +201,13 @@ impl<'a> Engine<'a> {
         let density = (self.board.get_population() as f64) / (cells_checked as f64);
 
         if density < 0.03 && self.board_type == BoardType::SymVec {
-            if self.iters_from_prev_switch > 512 {
+            if self.iters_from_prev_switch > SWITCH_BOARD_INERTIA {
                 self.iters_from_prev_switch = 0;
                 println!("switched to hashed board");
                 self.switch_board();
             }
         } else if density >= 0.03 && self.board_type == BoardType::Hashed {
-            if self.iters_from_prev_switch > 512 {
+            if self.iters_from_prev_switch > SWITCH_BOARD_INERTIA {
                 self.iters_from_prev_switch = 0;
                 println!("switched to symvec board");
                 self.switch_board();
@@ -211,11 +215,10 @@ impl<'a> Engine<'a> {
         }
 
         //println!("density {}", density);
-        //println!("iter time {}", self.get_last_iter_time());
 
-        if (self.iteration % 1000) == 0 && self.board_type == BoardType::SymVec {
-            // rebuild vector based board once per 1000 iterations
-            // to improve performance by removing empty rows
+        if (self.iteration % ITERATIONS_TO_CLEANUP) == 0 && self.board_type == BoardType::SymVec {
+            // rebuild vector based board once per ITERATIONS_TO_CLEANUP iterations
+            // to improve performance by removing empty cells
             let new_board = self.clone_board(self.board_type);
             self.set_board(new_board);
         }
