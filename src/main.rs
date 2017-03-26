@@ -65,6 +65,7 @@ struct Game<'a,> {
 
 
 impl<'a> Game<'a> {
+
     fn new(width: f64, height: f64) -> Game<'a> {
         let window: PistonWindow = WindowSettings::new(
             "My Rust Life",
@@ -252,7 +253,7 @@ impl<'a> Game<'a> {
         let board = self.engine.get_board_mut();
 
         if kill_alive && board.is_alive(col, row) {
-            board.kill_at(col, row)
+            board.kill_at(col, row);
         } else {
             board.born_at(col, row);
         }

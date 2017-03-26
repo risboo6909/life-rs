@@ -105,7 +105,7 @@ impl BoardInternal for SymVecBased {
     }
 
     fn rm_cell(&mut self, col: isize, row: isize) {
-        // empty
+        self.set_cell(col, row, Cell::Empty);
     }
 
     fn get_iter<'a>(&'a self) -> Box<Iterator<Item=CellIterType> + 'a> {
