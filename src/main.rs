@@ -88,7 +88,7 @@ impl<'a> Game<'a> {
             // enable/disable rendering
             render: true,
 
-            engine: Engine::new(Some(100), Some(100)),
+            engine: Engine::new(Some(50), Some(50)),
 
             cam: Cam::new(0.0, 0.0),
 
@@ -261,7 +261,15 @@ impl<'a> Game<'a> {
 
     fn to_screen(&self, col: isize, row: isize) -> (f64, f64) {
         // converts from logical board coordinates into screen coordinates
-        // taking in account current camera position and scale
+        // taking into account current camera position and scale
+
+        // suppose that screen center goes through the center of a cell
+        // with coordinates (0, 0)
+        //
+        //               ^
+        //               |
+        //               |
+        //              [|] - - - >
 
         let x = col as f64 * self.cell.get_width(&self.cam) + self.window.get_half_width() -
             self.cell.get_half_width(&self.cam);
@@ -277,6 +285,8 @@ impl<'a> Game<'a> {
 
         let mut offset_x = x - self.window.get_half_width();
         let mut offset_y = y - self.window.get_half_height();
+
+        // TODO: Ensure this needed
 
         if offset_x < 0.0 {
             offset_x -= self.cell.get_half_width(&self.cam);
