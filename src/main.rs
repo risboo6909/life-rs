@@ -38,6 +38,7 @@ enum State {
     Working,
     Draw,
     Paused,
+    StepByStep,
     Help,
 }
 
@@ -88,7 +89,7 @@ impl<'a> Game<'a> {
             // enable/disable rendering
             render: true,
 
-            engine: Engine::new(Some(50), Some(50)),
+            engine: Engine::new(Some(100), Some(100)),
 
             cam: Cam::new(0.0, 0.0),
 
@@ -122,10 +123,18 @@ impl<'a> Game<'a> {
                         }
 
                         Event::Update(_) => {
-                            if self.cur_state == State::Working {
-                                if !self.render || Instant::now() - last_iter_time >= Duration::from_millis(3) {
+                            if self.cur_state == State::Working || self.cur_state == State::StepByStep {
+                                if !self.render ||
+                                    Instant::now() - last_iter_time >= Duration::from_millis(3) ||
+                                    self.cur_state == State::StepByStep {
+
                                     self.engine.iterations(1);
                                     last_iter_time = Instant::now();
+
+                                    if self.cur_state == State::StepByStep {
+                                        self.cur_state = State::Paused;
+                                    }
+
                                 }
                             }
                         }
@@ -141,15 +150,20 @@ impl<'a> Game<'a> {
                             }
                         }
 
+                        Event::Input(Input::Press(Button::Keyboard(Key::S))) => {
+                            // step by step mode
+                            if self.cur_state == State::Working || self.cur_state == State::Paused {
+                                self.cur_state = State::StepByStep;
+                                // always enable rendering in step by step mode
+                                self.render = true;
+                            }
+                        }
+
                         Event::Input(Input::Press(Button::Keyboard(Key::G))) => {
                             // show/hide grid
                             self.show_grid = !self.show_grid;
                         }
 
-//                        Event::Input(Input::Press(Button::Keyboard(Key::S))) => {
-//                            // switch board internal representation
-//                            self.engine.switch_board();
-//                        }
 
                         Event::Input(Input::Press(Button::Mouse(MouseButton::Left))) => {
                             self.cur_state = State::Draw;
@@ -435,17 +449,10 @@ impl<'a> Game<'a> {
     }
 
     fn get_color(gen: usize) -> [f32; 4] {
-        let gen = gen as f32;
+        let gen = gen as f64;
+        let r = 1.0_f64.min(50.0*gen/256.0);
 
-        let mut r = 255.0;
-
-        if gen < 255.0 {
-            r = gen / 255.0;
-        }
-
-        let tmp = [r, 1.0, 0.0, 0.5];
-
-        tmp
+        [r as f32, 1.0 - r as f32, 0.0, 0.5]
     }
 
     fn paint(&mut self, c: Context, g: &mut GlGraphics) {
