@@ -433,7 +433,7 @@ impl<'a> Game<'a> {
 
     fn draw_hud(&mut self, c: &Context, g: &mut GlGraphics) {
         text(GREEN, 15,
-             &format!("iteration {}", self.engine.cur_iteration()),
+             &format!("generation {}", self.engine.cur_iteration()),
              &mut self.resources.font,
              c.trans(10.0, 20.0).transform, g);
 
