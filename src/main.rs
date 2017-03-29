@@ -449,9 +449,7 @@ impl<'a> Game<'a> {
     }
 
     fn get_color(gen: usize) -> [f32; 4] {
-        let gen = gen as f64;
-        let r = 1.0_f64.min(50.0*gen/256.0);
-
+        let r = 1.0_f64.min(50.0*gen as f64/256.0);
         [r as f32, 1.0 - r as f32, 0.0, 0.5]
     }
 

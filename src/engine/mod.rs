@@ -57,19 +57,12 @@ impl<'a> Engine<'a> {
 
     fn clone_board(&self, board_type: BoardType) -> Board<'a> {
 
-        let mut new_board = Self::new_board(board_type, self.board.get_cols(), self.board.get_rows());
+        let mut new_board = Self::new_board(board_type,
+                                            self.board.get_cols(), self.board.get_rows());
 
-        let cols = self.board.get_cols();
-        let rows = self.board.get_rows();
-
-        if cols.is_some() && rows.is_some() {
-            for col in 0..cols.unwrap() {
-                for row in 0..rows.unwrap() {
-                    let gen = self.board.get_cell_gen(col as isize, row as isize);
-                    if gen > 0 {
-                        new_board.born_at_gen(col as isize, row as isize, gen);
-                    }
-                }
+        for CellDesc { coord, gen, is_alive, .. } in self.board.into_iter() {
+            if is_alive {
+                new_board.born_at_gen(coord.col, coord.row, gen);
             }
         }
 

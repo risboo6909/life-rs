@@ -252,6 +252,7 @@ impl<'a> Iterator for BoardIntoIterator<'a> {
     type Item = CellDesc;
 
     fn next(&mut self) -> Option<CellDesc> {
+
         match self.cell_iter.next() {
 
             Some(e) => {
