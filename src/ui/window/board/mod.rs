@@ -1,7 +1,7 @@
 use super::{InactiveWindow, WindowBase};
 
 use super::super::super::engine::Engine;
-use super::super::super::board::{Board, CellDesc};
+pub use super::super::super::board::{Board, CellDesc};
 use super::super::super::structs::{CellProp, GameWindow};
 
 

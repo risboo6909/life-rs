@@ -1,15 +1,52 @@
+extern crate opengl_graphics;
+extern crate piston_window;
+
 mod window;
 
 pub use self::window::confirm::ConfirmationWindow;
-pub use self::window::board::{GameBoard, new as new_board_window};
-pub use super::structs::GameWindow;
+pub use self::window::board::{GameBoard, CellDesc, new as new_board_window};
+pub use super::structs::{GameWindow, CellProp};
 
-pub struct UI {
-    stack: Vec<Box<window::WindowBase>>,
-    window: GameWindow,
+use super::{Resources, OPENGL};
+use std::time::{Instant, Duration};
+use opengl_graphics::GlGraphics;
+use engine::Engine;
+use cam::Cam;
+
+use piston_window::{OpenGL, Context, text, clear, rectangle, line,
+                    Transformed, Event, Button, Input,
+                    MouseButton, Key, PistonWindow, WindowSettings, Motion};
+
+const GREEN: [f32; 4] = [0.5, 1.0, 0.0, 1.0];
+const GRAY: [f32; 4] = [100.0, 100.0, 100.0, 1.0];
+const RED: [f32; 4] = [255.0, 0.0, 0.0, 1.0];
+
+
+#[derive(PartialEq)]
+enum State {
+    Working,
+    Draw,
+    Paused,
+    StepByStep,
+    Help,
 }
 
-impl UI {
+
+pub struct UI<'a> {
+    stack: Vec<Box<window::WindowBase>>,
+    window: GameWindow,
+    engine: Engine<'a>,
+    resources: Resources,
+
+    cell: CellProp,
+    cam: Cam,
+
+    show_grid: bool,
+    render: bool,
+    cur_state: State,
+}
+
+impl<'a> UI<'a> {
 
     pub fn push(&mut self, w: Box<window::WindowBase>) {
         self.stack.push(w);
@@ -17,6 +54,197 @@ impl UI {
 
     pub fn pop(&mut self) {
         self.stack.pop();
+    }
+
+    fn to_logical(&self, x: f64, y: f64) -> (isize, isize) {
+        let (x, y) = self.cam.translate_inv(x, y);
+
+        let mut offset_x = x - self.window.get_half_width();
+        let mut offset_y = y - self.window.get_half_height();
+
+        // TODO: Ensure this needed
+
+        if offset_x < 0.0 {
+            offset_x -= self.cell.get_half_width(&self.cam);
+        } else if offset_x > 0.0 {
+            offset_x += self.cell.get_half_width(&self.cam);
+        }
+
+        if offset_y < 0.0 {
+            offset_y -= self.cell.get_half_height(&self.cam);
+        } else if offset_y > 0.0 {
+            offset_y += self.cell.get_half_height(&self.cam);
+        }
+
+        let col = (offset_x / self.cell.get_width(&self.cam)) as isize;
+        let row = (offset_y / self.cell.get_height(&self.cam)) as isize;
+
+        (col, row)
+    }
+
+    fn to_screen(&self, col: isize, row: isize) -> (f64, f64) {
+        // converts from logical board coordinates into screen coordinates
+        // taking into account current camera position and scale
+
+        // suppose that screen center goes through the center of a cell
+        // with coordinates (0, 0)
+        //
+        //               ^
+        //               |
+        //               |
+        //              [|] - - - >
+
+        let x = col as f64 * self.cell.get_width(&self.cam) + self.window.get_half_width() -
+            self.cell.get_half_width(&self.cam);
+
+        let y = row as f64 * self.cell.get_height(&self.cam) + self.window.get_half_height() -
+            self.cell.get_half_height(&self.cam);
+
+        self.cam.translate(x, y)
+    }
+
+    fn born_or_kill(&mut self, kill_alive: bool, x: f64, y: f64) {
+        let (col, row) = self.to_logical(x, y);
+        let board = self.engine.get_board_mut();
+
+        if kill_alive && board.is_alive(col, row) {
+            board.kill_at(col, row);
+        } else {
+            board.born_at(col, row);
+        }
+    }
+
+      #[inline]
+    fn get_right_border(&self) -> f64 {
+        // get absolute screen coordinate of right border of a board
+        if let Some(cols) = self.engine.get_board().get_cols() {
+            let x = self.cam.translate_x(self.window.get_half_width() +
+                0.5 * cols as f64 * self.cell.get_width(&self.cam));
+            if cols % 2 == 0 { x - self.cell.get_half_height(&self.cam) } else { x }
+        } else { self.window.get_width() }
+    }
+
+    #[inline]
+    fn get_left_border(&self) -> f64 {
+        // get absolute screen coordinate of left border of a board
+        let cols = match self.engine.get_board().get_cols() {
+            Some(cols) => cols,
+            None => (self.window.get_width() / self.cell.get_width(&self.cam)) as usize
+        };
+        let x = self.cam.translate_x(self.window.get_half_width() -
+            0.5 * cols as f64 * self.cell.get_width(&self.cam));
+        if cols % 2 == 0 { x - self.cell.get_half_height(&self.cam) } else { x }
+    }
+
+    #[inline]
+    fn get_top_border(&self) -> f64 {
+        // get absolute screen coordinate of top border of a board
+        let rows = match self.engine.get_board().get_rows() {
+            Some(rows) => rows,
+            None => (self.window.get_height() / self.cell.get_height(&self.cam)) as usize
+        };
+        let y = self.cam.translate_y(self.window.get_half_height() -
+            0.5 * rows as f64 * self.cell.get_height(&self.cam));
+        if rows % 2 == 0 { y - self.cell.get_half_height(&self.cam) } else { y }
+    }
+
+    #[inline]
+    fn get_bottom_border(&self) -> f64 {
+        // get absolute screen coordinate of bottom border of a board
+        if let Some(rows) = self.engine.get_board().get_rows() {
+            let y = self.cam.translate_y(self.window.get_half_height() +
+                0.5 * rows as f64 * self.cell.get_height(&self.cam));
+            if rows % 2 == 0 { y - self.cell.get_half_height(&self.cam) } else { y }
+        } else { self.window.get_height() }
+    }
+
+    fn draw_grid(&self, c: &Context, g: &mut GlGraphics) {
+
+        let right_offset_x = self.get_right_border();
+        let left_offset_x = self.get_left_border();
+
+        let top_offset_y = self.get_top_border();
+        let bottom_offset_y = self.get_bottom_border();
+
+        let mut y = top_offset_y;
+
+        // horizontal lines
+        while y < bottom_offset_y {
+            line(GRAY, 0.09,
+                 [left_offset_x, y, right_offset_x, y],
+                 c.transform, g);
+            y += self.cell.get_height(&self.cam);
+        }
+
+        let mut x = left_offset_x;
+
+        // vertical lines
+        while x < right_offset_x {
+            line(GRAY, 0.09,
+                 [x, top_offset_y, x, bottom_offset_y],
+                 c.transform, g);
+            x += self.cell.get_width(&self.cam);
+        }
+    }
+
+    fn draw_borders(&self, c: &Context, g: &mut GlGraphics) {
+
+        // draw borders
+        let right_offset_x = self.get_right_border();
+        let left_offset_x = self.get_left_border();
+
+        let top_offset_y = self.get_top_border();
+        let bottom_offset_y = self.get_bottom_border();
+
+        if let Some(_) = self.engine.get_board().get_cols() {
+            // draw right border
+
+            line(RED, 0.3,
+                 [right_offset_x, top_offset_y, right_offset_x, bottom_offset_y],
+                 c.transform, g);
+
+            // draw left border
+
+            line(RED, 0.3,
+                 [left_offset_x, top_offset_y, left_offset_x, bottom_offset_y],
+                 c.transform, g);
+        }
+
+        if let Some(_) = self.engine.get_board().get_rows() {
+            // draw top border
+
+            line(RED, 0.3,
+                 [left_offset_x, top_offset_y, right_offset_x, top_offset_y],
+                 c.transform, g);
+
+            // draw bottom border
+
+            line(RED, 0.3,
+                 [left_offset_x, bottom_offset_y, right_offset_x, bottom_offset_y],
+                 c.transform, g);
+        }
+    }
+
+    fn draw_hud(&mut self, c: &Context, g: &mut GlGraphics) {
+        text(GREEN, 15,
+             &format!("generation {}", self.engine.cur_iteration()),
+             &mut self.resources.font,
+             c.trans(10.0, 20.0).transform, g);
+
+        text(GREEN, 15,
+             &format!("population {}", self.engine.get_board().get_population()),
+             &mut self.resources.font,
+             c.trans(150.0, 20.0).transform, g);
+
+        text(GREEN, 15,
+             &format!("update time {:.*}", 5, self.engine.get_last_iter_time()),
+             &mut self.resources.font,
+             c.trans(320.0, 20.0).transform, g);
+    }
+
+    fn get_color(gen: usize) -> [f32; 4] {
+        let r = 1.0_f64.min(50.0*gen as f64/256.0);
+        [r as f32, 1.0 - r as f32, 0.0, 0.5]
     }
 
     pub fn event_dispatcher(&mut self) {
@@ -33,7 +261,7 @@ impl UI {
                 Some(e) => {
                     match e {
                         Event::Render(args) => {
-                            gl.draw(args.viewport(), |c, g| self.paint(c, g));
+                            gl.draw(args.viewport(), |c, g| self.paint_all(c, g));
                         }
 
                         Event::Update(_) => {
@@ -176,13 +404,49 @@ impl UI {
         }
     }
 
-    pub fn paint_all(&self) {
+    pub fn paint_all(&mut self, c: Context, g: &mut GlGraphics) {
 
+        clear([0.0, 0.0, 0.0, 1.0], g);
+
+        if self.render {
+            {
+                let board = self.engine.get_board();
+
+                for CellDesc { coord, gen, is_alive, .. } in board.into_iter() {
+                    if is_alive {
+                        let (x, y) = self.to_screen(coord.col, coord.row);
+                        rectangle(UI::get_color(gen), [x, y,
+                            self.cell.get_width(&self.cam),
+                            self.cell.get_height(&self.cam)],
+                                  c.transform, g);
+                    }
+                }
+            }
+
+            if self.show_grid {
+                self.draw_grid(&c, g);
+            }
+
+            self.draw_borders(&c, g);
+        }
+
+        // hud is always visible
+        self.draw_hud(&c, g);
     }
 
 }
 
-pub fn new(window: GameWindow) -> UI {
+pub fn new<'a> (window: GameWindow, engine: Engine<'a>, resources: Resources) -> UI {
     UI { stack: Vec::new(),
-         window: window }
+         window: window,
+         engine: engine,
+         resources: resources,
+
+         cell: CellProp::new(10.0, 10.0),
+         cam: Cam::new(0.0, 0.0),
+
+         show_grid: true,
+         render: true,
+         cur_state: State::Paused,
+       }
 }
