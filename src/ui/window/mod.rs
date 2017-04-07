@@ -1,9 +1,13 @@
 pub mod confirm;
 pub mod board;
 
+use piston_window::Context;
+use opengl_graphics::GlGraphics;
+
+
 pub trait WindowBase {
 
-    fn paint(&self);
+    fn paint(&mut self, c: Context, g: &mut GlGraphics);
 
 }
 

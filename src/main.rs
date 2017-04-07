@@ -11,7 +11,10 @@ mod cam;
 mod structs;
 mod ui;
 
-use structs::{CellProp, GameWindow};
+use ui::new_board_window;
+
+use structs::GameWindow;
+use std::rc::Rc;
 
 use find_folder::Search;
 use piston_window::{OpenGL, Context, text, clear, rectangle, line,
@@ -30,13 +33,14 @@ pub struct Resources {
     font: GlyphCache<'static>
 }
 
-struct Game<'a,> {
-    ui_manager: ui::UI<'a>,
+struct Game {
+    ui_manager: ui::UI,
 }
 
-impl<'a> Game<'a> {
+impl Game {
 
-    fn new(width: f64, height: f64) -> Game<'a> {
+    fn new(width: f64, height: f64) -> Game {
+
         let window: PistonWindow = WindowSettings::new(
             "My Rust Life",
             [width as u32, height as u32]
@@ -46,19 +50,13 @@ impl<'a> Game<'a> {
             .build()
             .unwrap();
 
-        let mut game = Game {
-
-            ui_manager: ui::new(GameWindow::new(width, height, window),
-                                Engine::new(Some(200), Some(200)),
+        Game {
+            ui_manager: ui::new(Rc::new(GameWindow::new(width, height, window)),
                                 Resources {
                                     font: GlyphCache::new(Search::ParentsThenKids(3, 3).
                                     for_folder("assets").unwrap().
-                                    join("Roboto-Regular.ttf")).unwrap(),
-                               }),
-
-        };
-
-        game
+                                    join("Roboto-Regular.ttf")).unwrap() }),
+        }
     }
 
     fn event_dispatcher(&mut self) {
@@ -70,5 +68,6 @@ impl<'a> Game<'a> {
 
 fn main() {
     let mut game = Game::new(1024.0, 768.0);
+
     game.event_dispatcher();
 }
