@@ -1,26 +1,20 @@
-use super::{InactiveWindow, WindowBase};
+use super::{InactiveWindow, WindowBase, Context, line, rectangle};
 
 use super::super::super::engine::Engine;
 pub use super::super::super::board::{Board, CellDesc};
-use super::super::super::structs::{CellProp, GameWindow};
+use super::super::super::structs::{CellProp, GraphicsWindow};
 
-use piston_window::{Context, line, rectangle};
 use opengl_graphics::GlGraphics;
 
 use std::rc::Rc;
+use std::cell::RefCell;
 
 use cam::Cam;
 
-
-const GREEN: [f32; 4] = [0.5, 1.0, 0.0, 1.0];
-const GRAY: [f32; 4] = [100.0, 100.0, 100.0, 1.0];
-const RED: [f32; 4] = [255.0, 0.0, 0.0, 1.0];
-
-
 pub struct GameBoard<'a> {
 
-    window: Rc<GameWindow>,
-    engine: Engine<'a>,
+    window: Rc<GraphicsWindow>,
+    engine: Rc<RefCell<Engine<'a>>>,
 
     cell: CellProp,
     cam: Cam,
@@ -54,9 +48,9 @@ impl<'a> WindowBase for GameBoard<'a> {
 
         if self.render {
             {
-                let board = self.engine.get_board();
+                let engine = self.engine.borrow();
 
-                for CellDesc { coord, gen, is_alive, .. } in board.into_iter() {
+                for CellDesc { coord, gen, is_alive, .. } in engine.get_board().into_iter() {
                     if is_alive {
                         let (x, y) = self.to_screen(coord.col, coord.row);
                         rectangle(GameBoard::get_color(gen), [x, y,
@@ -86,7 +80,7 @@ impl<'a> GameBoardTrait for GameBoard<'a> {
     #[inline]
     fn get_right_border(&self) -> f64 {
         // get absolute screen coordinate of right border of a board
-        if let Some(cols) = self.engine.get_board().get_cols() {
+        if let Some(cols) = self.engine.borrow().get_board().get_cols() {
             let x = self.cam.translate_x(self.window.get_half_width() +
                 0.5 * cols as f64 * self.cell.get_width(&self.cam));
             if cols % 2 == 0 { x - self.cell.get_half_height(&self.cam) } else { x }
@@ -96,7 +90,7 @@ impl<'a> GameBoardTrait for GameBoard<'a> {
     #[inline]
     fn get_left_border(&self) -> f64 {
         // get absolute screen coordinate of left border of a board
-        let cols = match self.engine.get_board().get_cols() {
+        let cols = match self.engine.borrow().get_board().get_cols() {
             Some(cols) => cols,
             None => (self.window.get_width() / self.cell.get_width(&self.cam)) as usize
         };
@@ -108,7 +102,7 @@ impl<'a> GameBoardTrait for GameBoard<'a> {
     #[inline]
     fn get_top_border(&self) -> f64 {
         // get absolute screen coordinate of top border of a board
-        let rows = match self.engine.get_board().get_rows() {
+        let rows = match self.engine.borrow().get_board().get_rows() {
             Some(rows) => rows,
             None => (self.window.get_height() / self.cell.get_height(&self.cam)) as usize
         };
@@ -120,7 +114,7 @@ impl<'a> GameBoardTrait for GameBoard<'a> {
     #[inline]
     fn get_bottom_border(&self) -> f64 {
         // get absolute screen coordinate of bottom border of a board
-        if let Some(rows) = self.engine.get_board().get_rows() {
+        if let Some(rows) = self.engine.borrow().get_board().get_rows() {
             let y = self.cam.translate_y(self.window.get_half_height() +
                 0.5 * rows as f64 * self.cell.get_height(&self.cam));
             if rows % 2 == 0 { y - self.cell.get_half_height(&self.cam) } else { y }
@@ -176,7 +170,9 @@ impl<'a> GameBoardTrait for GameBoard<'a> {
 
     fn born_or_kill(&mut self, kill_alive: bool, x: f64, y: f64) {
         let (col, row) = self.to_logical(x, y);
-        let board = self.engine.get_board_mut();
+        let mut engine = self.engine.borrow_mut();
+
+        let board = engine.get_board_mut();
 
         if kill_alive && board.is_alive(col, row) {
             board.kill_at(col, row);
@@ -199,30 +195,30 @@ impl<'a> GameBoardTrait for GameBoard<'a> {
         let top_offset_y = self.get_top_border();
         let bottom_offset_y = self.get_bottom_border();
 
-        if let Some(_) = self.engine.get_board().get_cols() {
+        if let Some(_) = self.engine.borrow_mut().get_board().get_cols() {
             // draw right border
 
-            line(RED, 0.3,
+            line(super::RED, 0.3,
                  [right_offset_x, top_offset_y, right_offset_x, bottom_offset_y],
                  c.transform, g);
 
             // draw left border
 
-            line(RED, 0.3,
+            line(super::RED, 0.3,
                  [left_offset_x, top_offset_y, left_offset_x, bottom_offset_y],
                  c.transform, g);
         }
 
-        if let Some(_) = self.engine.get_board().get_rows() {
+        if let Some(_) = self.engine.borrow_mut().get_board().get_rows() {
             // draw top border
 
-            line(RED, 0.3,
+            line(super::RED, 0.3,
                  [left_offset_x, top_offset_y, right_offset_x, top_offset_y],
                  c.transform, g);
 
             // draw bottom border
 
-            line(RED, 0.3,
+            line(super::RED, 0.3,
                  [left_offset_x, bottom_offset_y, right_offset_x, bottom_offset_y],
                  c.transform, g);
         }
@@ -240,7 +236,7 @@ impl<'a> GameBoardTrait for GameBoard<'a> {
 
        // horizontal lines
        while y < bottom_offset_y {
-           line(GRAY, 0.09,
+           line(super::GRAY, 0.09,
                 [left_offset_x, y, right_offset_x, y],
                 c.transform, g);
            y += self.cell.get_height(&self.cam);
@@ -250,7 +246,7 @@ impl<'a> GameBoardTrait for GameBoard<'a> {
 
        // vertical lines
        while x < right_offset_x {
-           line(GRAY, 0.09,
+           line(super::GRAY, 0.09,
                 [x, top_offset_y, x, bottom_offset_y],
                 c.transform, g);
            x += self.cell.get_width(&self.cam);
@@ -259,7 +255,7 @@ impl<'a> GameBoardTrait for GameBoard<'a> {
 
 }
 
-pub fn new<'a>(window: Rc<GameWindow>, engine: Engine<'a>) -> GameBoard<'a> {
+pub fn new<'a>(window: Rc<GraphicsWindow>, engine: Rc<RefCell<Engine<'a>>>) -> GameBoard<'a> {
 
     GameBoard {
         window: window,

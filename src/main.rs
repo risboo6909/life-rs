@@ -11,10 +11,9 @@ mod cam;
 mod structs;
 mod ui;
 
-use ui::new_board_window;
-
-use structs::GameWindow;
+use structs::GraphicsWindow;
 use std::rc::Rc;
+use std::cell::RefCell;
 
 use find_folder::Search;
 use piston_window::{OpenGL, Context, text, clear, rectangle, line,
@@ -33,13 +32,13 @@ pub struct Resources {
     font: GlyphCache<'static>
 }
 
-struct Game {
-    ui_manager: ui::UI,
+struct Game<'a> {
+    ui_manager: ui::UI<'a>,
 }
 
-impl Game {
+impl<'a> Game<'a> {
 
-    fn new(width: f64, height: f64) -> Game {
+    fn new(width: f64, height: f64) -> Game<'a> {
 
         let window: PistonWindow = WindowSettings::new(
             "My Rust Life",
@@ -51,11 +50,13 @@ impl Game {
             .unwrap();
 
         Game {
-            ui_manager: ui::new(Rc::new(GameWindow::new(width, height, window)),
+            ui_manager: ui::new(Rc::new(GraphicsWindow::new(width, height, window)),
+                                Rc::new(RefCell::new(Engine::new(Some(200), Some(200)))),
                                 Resources {
                                     font: GlyphCache::new(Search::ParentsThenKids(3, 3).
                                     for_folder("assets").unwrap().
-                                    join("Roboto-Regular.ttf")).unwrap() }),
+                                    join("Roboto-Regular.ttf")).unwrap()
+                                }),
         }
     }
 

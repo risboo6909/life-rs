@@ -4,8 +4,13 @@ extern crate piston_window;
 mod window;
 
 pub use self::window::confirm::ConfirmationWindow;
-pub use self::window::board::{GameBoard, CellDesc, new as new_board_window};
-pub use super::structs::{GameWindow, CellProp};
+use self::window::board::{GameBoard,
+                          CellDesc, new as new_board_window};
+
+use self::window::hud::{HUDWindow, new as new_hud_window};
+
+
+pub use super::structs::{GraphicsWindow, CellProp};
 
 use super::{Resources, OPENGL};
 use std::time::{Instant, Duration};
@@ -13,6 +18,7 @@ use opengl_graphics::GlGraphics;
 use engine::Engine;
 
 use std::rc::Rc;
+use std::cell::RefCell;
 
 use piston_window::{OpenGL, Context, text, clear, rectangle, line,
                     Transformed, Event, Button, Input,
@@ -29,18 +35,19 @@ enum State {
     Help,
 }
 
-pub struct UI {
-    stack: Vec<Box<window::WindowBase>>,
+pub struct UI<'a> {
+    stack: Vec<Box<window::WindowBase + 'a>>,
 
-    window: Rc<GameWindow>,
+    window: Rc<GraphicsWindow>,
+    engine: Rc<RefCell<Engine<'a>>>,
     resources: Resources,
 
     cur_state: State,
 }
 
-impl UI {
+impl<'a> UI<'a> {
 
-    pub fn push(&mut self, w: Box<window::WindowBase>) {
+    pub fn push(&mut self, w: Box<window::WindowBase + 'a>) {
         self.stack.push(w);
     }
 
@@ -48,26 +55,13 @@ impl UI {
         self.stack.pop();
     }
 
-    pub fn get_window(&self) -> Rc<GameWindow> {
+    pub fn get_window(&self) -> Rc<GraphicsWindow> {
         self.window.clone()
     }
 
-//    fn draw_hud(&mut self, c: &Context, g: &mut GlGraphics) {
-//        text(GREEN, 15,
-//             &format!("generation {}", self.engine.cur_iteration()),
-//             &mut self.resources.font,
-//             c.trans(10.0, 20.0).transform, g);
-//
-//        text(GREEN, 15,
-//             &format!("population {}", self.engine.get_board().get_population()),
-//             &mut self.resources.font,
-//             c.trans(150.0, 20.0).transform, g);
-//
-//        text(GREEN, 15,
-//             &format!("update time {:.*}", 5, self.engine.get_last_iter_time()),
-//             &mut self.resources.font,
-//             c.trans(320.0, 20.0).transform, g);
-//    }
+    pub fn get_engine(&self) -> Rc<RefCell<Engine<'a>>> {
+        self.engine.clone()
+    }
 
     pub fn event_dispatcher(&mut self) {
 
@@ -241,19 +235,20 @@ impl UI {
 
 }
 
-pub fn new(window: Rc<GameWindow>, resources: Resources) -> UI {
+pub fn new<'a>(window: Rc<GraphicsWindow>, engine: Rc<RefCell<Engine<'a>>>, resources: Resources) -> UI<'a> {
 
     let mut ui = UI { stack: Vec::new(),
                       window: window,
+                      engine: engine,
                       resources: resources,
                       cur_state: State::Paused,
                     };
 
     let board_window = Box::new(new_board_window(ui.get_window(),
-                                                 Engine::new(Some(200), Some(200))));
-
+                                                 ui.get_engine()));
 
     ui.push(board_window);
+    ui.push(Box::new(new_hud_window()));
 
     ui
 }
