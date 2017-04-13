@@ -52,11 +52,12 @@ impl<'a> Game<'a> {
         Game {
             ui_manager: ui::new(Rc::new(GraphicsWindow::new(width, height, window)),
                                 Rc::new(RefCell::new(Engine::new(Some(200), Some(200)))),
-                                Resources {
+                                Rc::new(RefCell::new(Resources {
                                     font: GlyphCache::new(Search::ParentsThenKids(3, 3).
                                     for_folder("assets").unwrap().
                                     join("Roboto-Regular.ttf")).unwrap()
-                                }),
+                                }))
+            ),
         }
     }
 

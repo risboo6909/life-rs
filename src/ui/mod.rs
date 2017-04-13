@@ -40,7 +40,7 @@ pub struct UI<'a> {
 
     window: Rc<GraphicsWindow>,
     engine: Rc<RefCell<Engine<'a>>>,
-    resources: Resources,
+    resources: Rc<RefCell<Resources>>,
 
     cur_state: State,
 }
@@ -63,6 +63,10 @@ impl<'a> UI<'a> {
         self.engine.clone()
     }
 
+    pub fn get_resources(&self) -> Rc<RefCell<Resources>> {
+        self.resources.clone()
+    }
+
     pub fn event_dispatcher(&mut self) {
 
         let mut last_iter_time = Instant::now();
@@ -76,11 +80,16 @@ impl<'a> UI<'a> {
 
             match event {
                 Some(e) => {
+
                     match e {
                         Event::Render(args) => {
                             gl.draw(args.viewport(), |c, g| self.paint_all(c, g));
                         }
-//
+                        Event::Update(_) => {
+                            for window in &mut self.stack {
+
+                            }
+                        }
 //                        Event::Update(_) => {
 //                            if self.cur_state == State::Working || self.cur_state == State::StepByStep {
 //                                if !self.render ||
@@ -229,13 +238,11 @@ impl<'a> UI<'a> {
             window.paint(c, g)
         }
 
-        // hud is always visible
-        //self.draw_hud(&c, g);
     }
 
 }
 
-pub fn new<'a>(window: Rc<GraphicsWindow>, engine: Rc<RefCell<Engine<'a>>>, resources: Resources) -> UI<'a> {
+pub fn new<'a>(window: Rc<GraphicsWindow>, engine: Rc<RefCell<Engine<'a>>>, resources: Rc<RefCell<Resources>>) -> UI<'a> {
 
     let mut ui = UI { stack: Vec::new(),
                       window: window,
@@ -247,8 +254,11 @@ pub fn new<'a>(window: Rc<GraphicsWindow>, engine: Rc<RefCell<Engine<'a>>>, reso
     let board_window = Box::new(new_board_window(ui.get_window(),
                                                  ui.get_engine()));
 
+    let hud_window = Box::new(new_hud_window(ui.get_resources(),
+                                             ui.get_engine()));
+
     ui.push(board_window);
-    ui.push(Box::new(new_hud_window()));
+    ui.push(hud_window);
 
     ui
 }

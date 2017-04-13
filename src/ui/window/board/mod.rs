@@ -1,4 +1,8 @@
-use super::{InactiveWindow, WindowBase, Context, line, rectangle};
+extern crate piston_window;
+
+
+use piston_window::{Context, line, rectangle, Transformed};
+use super::{ActiveWindow, WindowBase};
 
 use super::super::super::engine::Engine;
 pub use super::super::super::board::{Board, CellDesc};
@@ -24,7 +28,7 @@ pub struct GameBoard<'a> {
 
 }
 
-trait GameBoardTrait: InactiveWindow {
+trait GameBoardTrait: ActiveWindow {
 
     fn get_right_border(&self) -> f64;
     fn get_left_border(&self) -> f64;
@@ -71,7 +75,11 @@ impl<'a> WindowBase for GameBoard<'a> {
 
 }
 
-impl<'a> InactiveWindow for GameBoard<'a> {
+impl<'a> ActiveWindow for GameBoard<'a> {
+
+    fn event_dispatcher(&self) {
+
+    }
 
 }
 
