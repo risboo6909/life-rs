@@ -1,8 +1,8 @@
 extern crate piston_window;
 
 
-use piston_window::{Context, line, rectangle, Transformed};
-use super::{ActiveWindow, WindowBase};
+use piston_window::{Context, Transformed, Event, Input, Button, Key, line, rectangle};
+use super::WindowBase;
 
 use super::super::super::engine::Engine;
 pub use super::super::super::board::{Board, CellDesc};
@@ -12,8 +12,20 @@ use opengl_graphics::GlGraphics;
 
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::time::{Instant, Duration};
 
 use cam::Cam;
+
+
+#[derive(PartialEq)]
+enum States {
+    Working,
+    Draw,
+    Paused,
+    StepByStep,
+    Help,
+}
+
 
 pub struct GameBoard<'a> {
 
@@ -26,9 +38,11 @@ pub struct GameBoard<'a> {
     show_grid: bool,
     render: bool,
 
+    cur_state: States
+
 }
 
-trait GameBoardTrait: ActiveWindow {
+trait GameBoardTrait {
 
     fn get_right_border(&self) -> f64;
     fn get_left_border(&self) -> f64;
@@ -73,11 +87,47 @@ impl<'a> WindowBase for GameBoard<'a> {
         self.draw_borders(&c, g);
     }
 
-}
+    fn event_dispatcher(&mut self, event: &Event) {
 
-impl<'a> ActiveWindow for GameBoard<'a> {
+        let mut last_iter_time = Instant::now();
 
-    fn event_dispatcher(&self) {
+        match event {
+
+            &Event::Update(_) => {
+
+                if self.cur_state == States::Working || self.cur_state == States::StepByStep {
+                    if !self.render || Instant::now() - last_iter_time >= Duration::from_millis(3) ||
+                        self.cur_state == States::StepByStep {
+
+                        self.engine.borrow_mut().iterations(1);
+                        last_iter_time = Instant::now();
+
+                        if self.cur_state == States::StepByStep {
+                            self.cur_state = States::Paused;
+                        }
+
+                    }
+                }
+
+            }
+
+            &Event::Input(Input::Press(Button::Keyboard(Key::R))) => {
+
+                // If in pause mode - fill board with a random pattern
+                if self.cur_state == States::Paused {
+                    let board = self.engine.borrow().create_random(0.3);
+                    self.engine.borrow_mut().set_board(board);
+                }
+                else {
+                    // otherwise enable/disable rendering
+                    self.render = !self.render;
+                }
+
+            }
+
+            _ => {}
+
+        }
 
     }
 
@@ -274,6 +324,8 @@ pub fn new<'a>(window: Rc<GraphicsWindow>, engine: Rc<RefCell<Engine<'a>>>) -> G
 
         show_grid: true,
         render: true,
+
+        cur_state: States::Paused,
     }
 
 }

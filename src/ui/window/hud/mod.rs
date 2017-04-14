@@ -2,9 +2,9 @@
 extern crate piston_window;
 
 
-use piston_window::{Context, Transformed, text};
+use piston_window::{Context, Transformed, text, Event};
 
-use super::{ActiveWindow, WindowBase};
+use super::WindowBase;
 use super::super::super::engine::Engine;
 use super::super::super::Resources;
 
@@ -41,11 +41,7 @@ impl<'a> WindowBase for HUDWindow<'a> {
 
     }
 
-}
-
-impl<'a> ActiveWindow for HUDWindow<'a> {
-
-    fn event_dispatcher(&self) {
+    fn event_dispatcher(&mut self, event: &Event) {
 
     }
 

@@ -4,16 +4,16 @@ extern crate piston_window;
 mod window;
 
 pub use self::window::confirm::ConfirmationWindow;
+
+// various windows builders
 use self::window::board::{GameBoard,
                           CellDesc, new as new_board_window};
-
 use self::window::hud::{HUDWindow, new as new_hud_window};
 
 
 pub use super::structs::{GraphicsWindow, CellProp};
 
 use super::{Resources, OPENGL};
-use std::time::{Instant, Duration};
 use opengl_graphics::GlGraphics;
 use engine::Engine;
 
@@ -25,24 +25,12 @@ use piston_window::{OpenGL, Context, text, clear, rectangle, line,
                     MouseButton, Key, PistonWindow, WindowSettings, Motion};
 
 
-
-#[derive(PartialEq)]
-enum State {
-    Working,
-    Draw,
-    Paused,
-    StepByStep,
-    Help,
-}
-
 pub struct UI<'a> {
     stack: Vec<Box<window::WindowBase + 'a>>,
 
     window: Rc<GraphicsWindow>,
     engine: Rc<RefCell<Engine<'a>>>,
     resources: Rc<RefCell<Resources>>,
-
-    cur_state: State,
 }
 
 impl<'a> UI<'a> {
@@ -69,7 +57,6 @@ impl<'a> UI<'a> {
 
     pub fn event_dispatcher(&mut self) {
 
-        let mut last_iter_time = Instant::now();
         let mut last_pos: Option<[f64; 2]> = None;
 
         let mut gl = GlGraphics::new(OPENGL);
@@ -82,31 +69,17 @@ impl<'a> UI<'a> {
                 Some(e) => {
 
                     match e {
+
                         Event::Render(args) => {
                             gl.draw(args.viewport(), |c, g| self.paint_all(c, g));
                         }
-                        Event::Update(_) => {
-                            for window in &mut self.stack {
 
+                        _ => {
+                            for window in &mut self.stack {
+                                window.event_dispatcher(&e);
                             }
                         }
-//                        Event::Update(_) => {
-//                            if self.cur_state == State::Working || self.cur_state == State::StepByStep {
-//                                if !self.render ||
-//                                    Instant::now() - last_iter_time >= Duration::from_millis(3) ||
-//                                    self.cur_state == State::StepByStep {
-//
-//                                    self.engine.iterations(1);
-//                                    last_iter_time = Instant::now();
-//
-//                                    if self.cur_state == State::StepByStep {
-//                                        self.cur_state = State::Paused;
-//                                    }
-//
-//                                }
-//                            }
-//                        }
-//
+
 //                        Event::Input(Input::Press(Button::Keyboard(Key::P))) => {
 //                            // pause/unpause
 //                            if self.cur_state == State::Working {
@@ -248,7 +221,6 @@ pub fn new<'a>(window: Rc<GraphicsWindow>, engine: Rc<RefCell<Engine<'a>>>, reso
                       window: window,
                       engine: engine,
                       resources: resources,
-                      cur_state: State::Paused,
                     };
 
     let board_window = Box::new(new_board_window(ui.get_window(),

@@ -1,8 +1,8 @@
 // Simple confirmation window
 
-use super::{ActiveWindow, WindowBase};
+use super::WindowBase;
 
-use piston_window::Context;
+use piston_window::{Context, Event};
 use opengl_graphics::GlGraphics;
 
 
@@ -16,11 +16,7 @@ impl WindowBase for ConfirmationWindow {
 
     }
 
-}
-
-impl ActiveWindow for ConfirmationWindow {
-
-    fn event_dispatcher(&self) {
+    fn event_dispatcher(&mut self, event: &Event) {
 
     }
 
