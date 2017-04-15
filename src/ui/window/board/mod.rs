@@ -1,7 +1,8 @@
 extern crate piston_window;
 
 
-use piston_window::{Context, Transformed, Event, Input, Button, Key, line, rectangle};
+use piston_window::{Context, Transformed, Event, Input, Button, Key, MouseButton, Motion,
+                    line, rectangle};
 use super::WindowBase;
 
 use super::super::super::engine::Engine;
@@ -17,7 +18,7 @@ use std::time::{Instant, Duration};
 use cam::Cam;
 
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 enum States {
     Working,
     Draw,
@@ -37,6 +38,9 @@ pub struct GameBoard<'a> {
 
     show_grid: bool,
     render: bool,
+
+    last_iter_time: Instant,
+    last_pos: Option<[f64; 2]>,
 
     cur_state: States
 
@@ -89,18 +93,17 @@ impl<'a> WindowBase for GameBoard<'a> {
 
     fn event_dispatcher(&mut self, event: &Event) {
 
-        let mut last_iter_time = Instant::now();
-
         match event {
 
             &Event::Update(_) => {
 
                 if self.cur_state == States::Working || self.cur_state == States::StepByStep {
-                    if !self.render || Instant::now() - last_iter_time >= Duration::from_millis(3) ||
+                    if !self.render ||
+                        Instant::now() - self.last_iter_time >= Duration::from_millis(3) ||
                         self.cur_state == States::StepByStep {
 
                         self.engine.borrow_mut().iterations(1);
-                        last_iter_time = Instant::now();
+                        self.last_iter_time = Instant::now();
 
                         if self.cur_state == States::StepByStep {
                             self.cur_state = States::Paused;
@@ -110,6 +113,109 @@ impl<'a> WindowBase for GameBoard<'a> {
                 }
 
             }
+
+            &Event::Input(Input::Press(Button::Keyboard(Key::P))) => {
+                // pause/unpause
+                if self.cur_state == States::Working {
+                    self.cur_state = States::Paused;
+                    // always enable rendering in pause mode
+                    self.render = true;
+                } else {
+                    self.cur_state = States::Working;
+                }
+            }
+
+            &Event::Input(Input::Press(Button::Keyboard(Key::S))) => {
+                // step by step mode
+                if self.cur_state == States::Working || self.cur_state == States::Paused {
+                    self.cur_state = States::StepByStep;
+                    // always enable rendering in step by step mode
+                    self.render = true;
+                }
+            }
+
+            &Event::Input(Input::Press(Button::Keyboard(Key::G))) => {
+                // show/hide grid
+                self.show_grid = !self.show_grid;
+            }
+
+
+            // mouse controls ->
+            &Event::Input(Input::Press(Button::Mouse(MouseButton::Left))) => {
+                self.cur_state = States::Draw;
+            }
+
+            &Event::Input(Input::Release(Button::Mouse(MouseButton::Left))) => {
+                if self.last_pos.is_some() {
+                    let pos = self.last_pos.unwrap();
+                    self.born_or_kill(true, pos[0], pos[1]);
+
+                    self.cur_state = States::Paused;
+                }
+            }
+
+            &Event::Input(Input::Move(Motion::MouseCursor(x, y))) => {
+                if self.cur_state == States::Draw {
+                    self.born_or_kill(false, x, y);
+                }
+                self.last_pos = Some([x, y]);
+            }
+            // mouse control <-
+
+            // movements control ->
+            &Event::Input(Input::Press(Button::Keyboard(Key::Right))) => {
+                self.cam.move_right();
+            }
+
+            &Event::Input(Input::Release(Button::Keyboard(Key::Right))) => {
+                self.cam.reset_move_step();
+            }
+
+            &Event::Input(Input::Press(Button::Keyboard(Key::Left))) => {
+                self.cam.move_left();
+            }
+
+            &Event::Input(Input::Release(Button::Keyboard(Key::Left))) => {
+                self.cam.reset_move_step();
+            }
+
+            &Event::Input(Input::Press(Button::Keyboard(Key::Up))) => {
+                self.cam.move_up();
+            }
+
+            &Event::Input(Input::Release(Button::Keyboard(Key::Up))) => {
+                self.cam.reset_move_step();
+            }
+
+            &Event::Input(Input::Press(Button::Keyboard(Key::Down))) => {
+                self.cam.move_down();;
+            }
+
+            &Event::Input(Input::Release(Button::Keyboard(Key::Down))) => {
+                self.cam.reset_move_step();
+            }
+            // movements control <-
+
+            // zoom out ->
+            &Event::Input(Input::Press(Button::Keyboard(Key::NumPadMinus))) => {
+                self.cam.zoom_out();
+            }
+
+            &Event::Input(Input::Press(Button::Keyboard(Key::Minus))) => {
+                self.cam.zoom_out();
+            }
+            // zoom out <-
+
+            // zoom in ->
+            &Event::Input(Input::Press(Button::Keyboard(Key::NumPadPlus))) => {
+                self.cam.zoom_in();
+            }
+
+            // use "Equals" instead of "Plus" to avoid holding shift key requirement
+            &Event::Input(Input::Press(Button::Keyboard(Key::Equals))) => {
+                self.cam.zoom_in();
+            }
+            // zoom in <-
 
             &Event::Input(Input::Press(Button::Keyboard(Key::R))) => {
 
@@ -324,6 +430,9 @@ pub fn new<'a>(window: Rc<GraphicsWindow>, engine: Rc<RefCell<Engine<'a>>>) -> G
 
         show_grid: true,
         render: true,
+
+        last_iter_time: Instant::now(),
+        last_pos: None,
 
         cur_state: States::Paused,
     }
