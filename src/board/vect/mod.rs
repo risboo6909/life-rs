@@ -20,7 +20,7 @@ impl<'a> Iterator for CellsIterator<'a> {
     fn next(&mut self) -> Option<CellIterType> {
 
         match self.iter.next() {
-            Some(e) => {
+            Some(_) => {
                 self.col += 1;
                 Some((self.col, self.row, self.cells[self.row][self.col]))
             }

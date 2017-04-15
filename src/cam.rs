@@ -22,22 +22,6 @@ impl Cam {
         }
     }
 
-    pub fn zoom_step(mut self, zoom_step: f64) -> Self {
-        self.zoom_step = zoom_step;
-        self
-    }
-
-    pub fn move_step(mut self, move_step: f64) -> Self {
-        self.move_step = move_step;
-        self.default_move_step = move_step;
-        self
-    }
-
-    pub fn move_acc(mut self, move_acc: f64) -> Self {
-        self.move_acc = move_acc;
-        self
-    }
-
     pub fn reset_move_step(&mut self) {
         self.move_step = self.default_move_step
     }
@@ -52,14 +36,6 @@ impl Cam {
 
     pub fn get_move_acc(&self) -> f64 {
         self.move_acc
-    }
-
-    pub fn get_x(&self) -> f64 {
-        self.x
-    }
-
-    pub fn get_y(&self) -> f64 {
-        self.y
     }
 
     pub fn get_scale(&self) -> f64 {
@@ -80,14 +56,6 @@ impl Cam {
 
     pub fn translate_inv(&self, x: f64, y: f64) -> (f64, f64) {
         (x - self.x, y - self.y)
-    }
-
-    pub fn scale(&self, width: f64, height: f64) -> (f64, f64) {
-        (self.scale * width, self.scale * height)
-    }
-
-    pub fn scale_inv(&self, width: f64, height: f64) -> (f64, f64) {
-        ((1.0 / self.scale) * width, (1.0 / self.scale) * height)
     }
 
     pub fn zoom_out(&mut self) {

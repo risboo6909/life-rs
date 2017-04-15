@@ -46,13 +46,11 @@ impl<'a> Engine<'a> {
     }
 
     fn new_board(board_type: BoardType, cols: Option<usize>, rows: Option<usize>) -> Board<'a> {
-        let mut new_board;
         if board_type == BoardType::Hashed {
-            new_board = Board::new(new_hashed(), cols, rows);
+            Board::new(new_hashed(), cols, rows)
         }  else {
-            new_board = Board::new(new_vect(), cols, rows);
+            Board::new(new_vect(), cols, rows)
         }
-        new_board
     }
 
     fn clone_board(&self, board_type: BoardType) -> Board<'a> {

@@ -16,11 +16,8 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 use find_folder::Search;
-use piston_window::{OpenGL, Context, text, clear, rectangle, line,
-                    Transformed, Event, Button, Input,
-                    MouseButton, Key, PistonWindow, WindowSettings, Motion};
+use piston_window::{OpenGL, PistonWindow, WindowSettings};
 
-use opengl_graphics::GlGraphics;
 use opengl_graphics::glyph_cache::GlyphCache;
 
 use engine::Engine;

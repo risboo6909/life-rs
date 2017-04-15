@@ -11,9 +11,6 @@
 pub mod vect;
 pub mod hashed;
 
-use std::collections::hash_map::Iter;
-use self::hashed::{HashBased, new as new_hashed};
-
 
 #[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Coord {
@@ -54,8 +51,6 @@ pub struct Board<'a> {
     rows: Option<usize>,
     cols: Option<usize>,
 
-    half_cols: Option<isize>,
-    half_rows: Option<isize>,
 }
 
 #[inline]
@@ -86,12 +81,13 @@ impl<'a> Board<'a> {
 
     pub fn new(cells: Box<BoardInternal>, width: Option<usize>, height: Option<usize>) -> Board<'a> {
         Board {
+
             cells: cells,
             population: 0,
+
             cols: width,
             rows: height,
-            half_cols: width.map(|x| (x / 2) as isize),
-            half_rows: height.map(|x| (x / 2) as isize),
+
         }
     }
 
@@ -181,7 +177,7 @@ impl<'a> Board<'a> {
         let (col, row) = self.constrain_board(col, row);
         match self.cells.get_cell(col, row) {
             Some(x) => {
-                if let &Cell::Occupied { gen } = x {
+                if let &Cell::Occupied{gen} = x {
                     return *x
                 } else {
                     return Cell::Empty

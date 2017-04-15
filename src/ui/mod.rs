@@ -6,9 +6,8 @@ mod window;
 pub use self::window::confirm::ConfirmationWindow;
 
 // various windows builders
-use self::window::board::{GameBoard,
-                          CellDesc, new as new_board_window};
-use self::window::hud::{HUDWindow, new as new_hud_window};
+use self::window::board::new as new_board_window;
+use self::window::hud::new as new_hud_window;
 
 
 pub use super::structs::{GraphicsWindow, CellProp};
@@ -20,9 +19,7 @@ use engine::Engine;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use piston_window::{OpenGL, Context, text, clear, rectangle, line,
-                    Transformed, Event, Button, Input,
-                    MouseButton, Key, PistonWindow, WindowSettings, Motion};
+use piston_window::{Context, Event, clear};
 
 
 pub struct UI<'a> {
@@ -56,8 +53,6 @@ impl<'a> UI<'a> {
     }
 
     pub fn event_dispatcher(&mut self) {
-
-        let mut last_pos: Option<[f64; 2]> = None;
 
         let mut gl = GlGraphics::new(OPENGL);
 

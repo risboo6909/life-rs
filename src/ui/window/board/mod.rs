@@ -1,8 +1,7 @@
 extern crate piston_window;
 
 
-use piston_window::{Context, Transformed, Event, Input, Button, Key, MouseButton, Motion,
-                    line, rectangle};
+use piston_window::{Context, Event, Input, Button, Key, MouseButton, Motion, line, rectangle};
 use super::WindowBase;
 
 use super::super::super::engine::Engine;
