@@ -6,9 +6,8 @@ mod window;
 pub use self::window::confirm::ConfirmationWindow;
 
 // various windows builders
-use self::window::board::new as new_board_window;
-use self::window::hud::new as new_hud_window;
-
+use self::window::board::GameBoard;
+use self::window::hud::HUDWindow;
 
 pub use super::structs::{GraphicsWindow, CellProp};
 
@@ -75,6 +74,7 @@ impl<'a> UI<'a> {
                             for window in &mut self.stack {
                                 window.event_dispatcher(&e);
                             }
+
                         }
 
                     }
@@ -107,11 +107,8 @@ pub fn new<'a>(window: Rc<GraphicsWindow>, engine: Rc<RefCell<Engine<'a>>>, reso
                       resources: resources,
                     };
 
-    let board_window = Box::new(new_board_window(ui.get_window(),
-                                                 ui.get_engine()));
-
-    let hud_window = Box::new(new_hud_window(ui.get_resources(),
-                                             ui.get_engine()));
+    let board_window = Box::new(GameBoard::new(ui.get_window(), ui.get_engine()));
+    let hud_window = Box::new(HUDWindow::new(ui.get_resources(), ui.get_engine()));
 
     ui.push(board_window);
     ui.push(hud_window);

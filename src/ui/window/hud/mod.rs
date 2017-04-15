@@ -20,6 +20,17 @@ pub struct HUDWindow<'a> {
     //state: isize,
 }
 
+impl<'a> HUDWindow<'a> {
+    pub fn new(resources: Rc<RefCell<Resources>>, engine: Rc<RefCell<Engine<'a>>>) -> HUDWindow<'a> {
+
+        HUDWindow {
+            resources: resources,
+            engine: engine
+        }
+
+    }
+}
+
 impl<'a> WindowBase for HUDWindow<'a> {
 
     fn paint(&mut self, c: Context, g: &mut GlGraphics) {
@@ -43,16 +54,6 @@ impl<'a> WindowBase for HUDWindow<'a> {
 
     fn event_dispatcher(&mut self, event: &Event) {
 
-    }
-
-}
-
-
-pub fn new<'a>(resources: Rc<RefCell<Resources>>, engine: Rc<RefCell<Engine<'a>>>) -> HUDWindow<'a> {
-
-    HUDWindow {
-        resources: resources,
-        engine: engine
     }
 
 }
