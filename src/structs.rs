@@ -36,7 +36,7 @@ impl CellProp {
 }
 
 
-pub struct GameWindow {
+pub struct GraphicsWindow {
 
     window: Rc<RefCell<PistonWindow>>,
 
@@ -45,11 +45,12 @@ pub struct GameWindow {
 }
 
 
-impl GameWindow {
+impl GraphicsWindow {
 
     pub fn new(window_width: f64, window_height: f64, window: PistonWindow) -> Self {
-        GameWindow { width: window_width, height: window_height,
-            window: Rc::new(RefCell::new(window)) }
+        GraphicsWindow { width: window_width,
+                         height: window_height,
+                         window: Rc::new(RefCell::new(window)) }
     }
 
     #[inline]
