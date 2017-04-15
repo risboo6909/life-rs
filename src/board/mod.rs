@@ -175,12 +175,12 @@ impl<'a> Board<'a> {
     pub fn get_cell(&self, col: isize, row: isize) -> Cell {
         // if cell is not yet initialized it is considered as free
         let (col, row) = self.constrain_board(col, row);
+
         match self.cells.get_cell(col, row) {
             Some(x) => {
-                if let &Cell::Occupied{gen} = x {
-                    return *x
-                } else {
-                    return Cell::Empty
+                match x {
+                   &Cell::Occupied {gen} => *x,
+                   _ => Cell::Empty,
                 }
             }
             None => Cell::Empty

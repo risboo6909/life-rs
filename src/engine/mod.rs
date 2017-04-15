@@ -238,6 +238,7 @@ impl<'a> Engine<'a> {
         for _ in 0..n {
             self.one_iteration();
         }
+
         self.last_iter_time = time::precise_time_s() - st;
         self.last_iter_time
     }
