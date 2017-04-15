@@ -216,9 +216,10 @@ impl<'a> WindowBase for GameBoard<'a> {
             }
             // zoom in <-
 
+            // misc controls ->
             &Event::Input(Input::Press(Button::Keyboard(Key::R))) => {
 
-                // If in pause mode - fill board with a random pattern
+                // in pause mode - fill board with a random pattern
                 if self.cur_state == States::Paused {
                     let board = self.engine.borrow().create_random(0.3);
                     self.engine.borrow_mut().set_board(board);
@@ -229,6 +230,14 @@ impl<'a> WindowBase for GameBoard<'a> {
                 }
 
             }
+
+            &Event::Input(Input::Press(Button::Keyboard(Key::C))) => {
+                // clear board and reset counters
+
+                // TODO: Add confirmation window
+                let board = self.engine.borrow_mut().reset();
+            }
+            // misc controls <-
 
             _ => {}
 
@@ -399,9 +408,11 @@ impl<'a> GameBoardTrait for GameBoard<'a> {
 
        // horizontal lines
        while y < bottom_offset_y {
+
            line(super::GRAY, 0.09,
                 [left_offset_x, y, right_offset_x, y],
                 c.transform, g);
+
            y += self.cell.get_height(&self.cam);
        }
 
@@ -409,9 +420,11 @@ impl<'a> GameBoardTrait for GameBoard<'a> {
 
        // vertical lines
        while x < right_offset_x {
+
            line(super::GRAY, 0.09,
                 [x, top_offset_y, x, bottom_offset_y],
                 c.transform, g);
+
            x += self.cell.get_width(&self.cam);
        }
    }

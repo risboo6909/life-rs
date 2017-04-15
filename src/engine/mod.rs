@@ -19,6 +19,9 @@ enum BoardType {
 }
 
 pub struct Engine<'a> {
+    cols: Option<usize>,
+    rows: Option<usize>,
+
     board_type: BoardType,
     iters_from_prev_switch: usize,
     pub board: Board<'a>,
@@ -37,12 +40,21 @@ impl<'a> Engine<'a> {
     pub fn new(cols: Option<usize>, rows: Option<usize>) -> Self {
         let board_type = BoardType::Hashed;
         Engine {
+            cols: cols,
+            rows: rows,
+
             board_type: board_type,
             iters_from_prev_switch: SWITCH_BOARD_INERTIA,
             board: Self::new_board(board_type, cols, rows),
             iteration: 0,
             last_iter_time: 0f64
         }
+    }
+
+    pub fn reset(&mut self) {
+        self.board = Self::new_board(self.board_type, self.cols, self.rows);
+        self.iteration = 0;
+        self.last_iter_time = 0f64;
     }
 
     fn new_board(board_type: BoardType, cols: Option<usize>, rows: Option<usize>) -> Board<'a> {
