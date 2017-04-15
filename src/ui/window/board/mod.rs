@@ -45,7 +45,7 @@ pub struct GameBoard<'a> {
 
 }
 
-trait GameBoardTrait {
+pub trait GameBoardTrait {
 
     fn get_right_border(&self) -> f64;
     fn get_left_border(&self) -> f64;
@@ -60,6 +60,31 @@ trait GameBoardTrait {
 
     fn draw_borders(&self, c: &Context, g: &mut GlGraphics);
     fn draw_grid(&self, c: &Context, g: &mut GlGraphics);
+
+}
+
+
+impl<'a> GameBoard<'a> {
+
+    pub fn new(window: Rc<GraphicsWindow>, engine: Rc<RefCell<Engine<'a>>>) -> GameBoard<'a> {
+
+        GameBoard {
+            window: window,
+            engine: engine,
+
+            cell: CellProp::new(10.0, 10.0),
+            cam: Cam::new(0.0, 0.0),
+
+            show_grid: true,
+            render: true,
+
+            last_iter_time: Instant::now(),
+            last_pos: None,
+
+            cur_state: States::Paused,
+        }
+
+    }
 
 }
 
@@ -428,25 +453,5 @@ impl<'a> GameBoardTrait for GameBoard<'a> {
            x += self.cell.get_width(&self.cam);
        }
    }
-
-}
-
-pub fn new<'a>(window: Rc<GraphicsWindow>, engine: Rc<RefCell<Engine<'a>>>) -> GameBoard<'a> {
-
-    GameBoard {
-        window: window,
-        engine: engine,
-
-        cell: CellProp::new(10.0, 10.0),
-        cam: Cam::new(0.0, 0.0),
-
-        show_grid: true,
-        render: true,
-
-        last_iter_time: Instant::now(),
-        last_pos: None,
-
-        cur_state: States::Paused,
-    }
 
 }
