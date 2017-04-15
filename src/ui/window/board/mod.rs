@@ -262,6 +262,11 @@ impl<'a> WindowBase for GameBoard<'a> {
                 // TODO: Add confirmation window
                 let board = self.engine.borrow_mut().reset();
             }
+
+            &Event::Input(Input::Press(Button::Keyboard(Key::F))) => {
+                // reset camera coordinates to defaults
+                self.cam.reset();
+            }
             // misc controls <-
 
             _ => {}

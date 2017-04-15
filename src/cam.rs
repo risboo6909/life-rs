@@ -22,6 +22,13 @@ impl Cam {
         }
     }
 
+    pub fn reset(&mut self) {
+        self.x = 1.0;
+        self.y = 1.0;
+        self.zoom_step = 0.1;
+        self.move_step = self.default_move_step;
+    }
+
     pub fn reset_move_step(&mut self) {
         self.move_step = self.default_move_step
     }
