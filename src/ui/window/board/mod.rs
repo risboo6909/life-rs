@@ -47,25 +47,6 @@ pub struct GameBoard<'a> {
 
 }
 
-pub trait GameBoardTrait {
-
-    fn get_right_border(&self) -> f64;
-    fn get_left_border(&self) -> f64;
-    fn get_top_border(&self) -> f64;
-    fn get_bottom_border(&self) -> f64;
-
-    fn to_logical(&self, x: f64, y: f64) -> (isize, isize);
-    fn to_screen(&self, col: isize, row: isize) -> (f64, f64);
-    fn born_or_kill(&mut self, kill_alive: bool, x: f64, y: f64);
-
-    fn get_color(gen: usize) -> [f32; 4];
-
-    fn draw_borders(&self, c: &Context, g: &mut GlGraphics);
-    fn draw_grid(&self, c: &Context, g: &mut GlGraphics);
-
-}
-
-
 impl<'a> GameBoard<'a> {
 
     pub fn new(window: Rc<GraphicsWindow>, engine: Rc<RefCell<Engine<'a>>>) -> GameBoard<'a> {
@@ -274,7 +255,7 @@ impl<'a> WindowBase for GameBoard<'a> {
 
 }
 
-impl<'a> GameBoardTrait for GameBoard<'a> {
+impl<'a> GameBoard<'a> {
 
     #[inline]
     fn get_right_border(&self) -> f64 {

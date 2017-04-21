@@ -11,28 +11,35 @@ use super::super::super::Resources;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-//enum States {
-//
-//}
-
-pub struct ConfirmationWindow<'a> {
-    engine: Rc<RefCell<Engine<'a>>>,
-    resources: Rc<RefCell<Resources>>
+#[derive(PartialEq)]
+pub enum UserChoice {
+    Ok,
+    Cancel,
 }
 
-impl<'a> ConfirmationWindow<'a> {
+pub struct ConfirmationWindow<'a, F> {
+    engine: Rc<RefCell<Engine<'a>>>,
+    resources: Rc<RefCell<Resources>>,
 
-    pub fn new(resources: Rc<RefCell<Resources>>, engine: Rc<RefCell<Engine<'a>>>) ->
-                                                                    ConfirmationWindow<'a> {
+    callback: F,
+}
+
+impl<'a, F> ConfirmationWindow<'a, F> {
+
+    pub fn new(resources: Rc<RefCell<Resources>>, engine: Rc<RefCell<Engine<'a>>>,
+               callback: F) -> ConfirmationWindow<'a, F> where F: FnMut(UserChoice) {
+
         ConfirmationWindow {
             engine: engine,
             resources: resources,
+
+            callback: callback
         }
     }
 
 }
 
-impl<'a> WindowBase for ConfirmationWindow<'a> {
+impl<'a, F> WindowBase for ConfirmationWindow<'a, F> where F: FnMut(UserChoice) {
 
     fn paint(&mut self, c: Context, g: &mut GlGraphics) {
         rectangle([1.0, 1.0, 1.0, 0.5],
@@ -44,6 +51,7 @@ impl<'a> WindowBase for ConfirmationWindow<'a> {
         match event {
 
              &Event::Input(Input::Press(Button::Keyboard(Key::Y))) => {
+                 (self.callback)(UserChoice::Ok);
                  PostAction::Pop
              }
 

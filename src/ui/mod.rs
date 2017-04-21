@@ -6,7 +6,7 @@ mod window;
 use self::window::{WindowBase, PostAction};
 use self::window::board::GameBoard;
 use self::window::hud::HUDWindow;
-use self::window::confirm::ConfirmationWindow;
+use self::window::confirm::{ConfirmationWindow, UserChoice};
 
 pub use super::structs::{GraphicsWindow, CellProp};
 
@@ -99,12 +99,16 @@ impl<'a> UI<'a> {
                             match some_event {
 
                                 &Event::Input(Input::Press(Button::Keyboard(Key::C))) => {
+
                                     // clear board and reset counters
 
                                     let confirm_window = Box::new(ConfirmationWindow::new(
-                                        self.get_resources(), self.get_engine()));
+                                        self.get_resources(), self.get_engine(),
 
-                                    // TODO: add setting confirmation parameters
+                                        |user_choice| {
+                                            if user_choice == UserChoice::Ok {}
+                                        }
+                                    ));
 
                                     self.push_front(confirm_window);
 
@@ -154,8 +158,11 @@ pub fn new<'a>(window: Rc<GraphicsWindow>, engine: Rc<RefCell<Engine<'a>>>, reso
                       resources: resources,
                     };
 
-    let board_window = Box::new(GameBoard::new(ui.get_window(), ui.get_engine()));
-    let hud_window = Box::new(HUDWindow::new(ui.get_resources(), ui.get_engine()));
+    let board_window = Box::new(GameBoard::new(ui.get_window(),
+                                               ui.get_engine()));
+
+    let hud_window = Box::new(HUDWindow::new(ui.get_resources(),
+                                             ui.get_engine()));
 
     ui.push(board_window);
     ui.push(hud_window);
