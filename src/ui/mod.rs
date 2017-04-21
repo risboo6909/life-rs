@@ -3,11 +3,10 @@ extern crate piston_window;
 
 mod window;
 
-pub use self::window::confirm::ConfirmationWindow;
-
-// various windows builders
+use self::window::{WindowBase, PostAction};
 use self::window::board::GameBoard;
 use self::window::hud::HUDWindow;
+use self::window::confirm::ConfirmationWindow;
 
 pub use super::structs::{GraphicsWindow, CellProp};
 
@@ -18,11 +17,10 @@ use engine::Engine;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use piston_window::{Context, Event, clear};
-
+use piston_window::{Event, Input, Button, Key, Context, clear};
 
 pub struct UI<'a> {
-    stack: Vec<Box<window::WindowBase + 'a>>,
+    stack: Vec<Box<WindowBase + 'a>>,
 
     window: Rc<GraphicsWindow>,
     engine: Rc<RefCell<Engine<'a>>>,
@@ -31,12 +29,12 @@ pub struct UI<'a> {
 
 impl<'a> UI<'a> {
 
-    pub fn push(&mut self, w: Box<window::WindowBase + 'a>) {
+    pub fn push(&mut self, w: Box<WindowBase + 'a>) {
         self.stack.push(w);
     }
 
-    pub fn pop(&mut self) {
-        self.stack.pop();
+    pub fn push_front(&mut self, w: Box<WindowBase + 'a>) {
+        self.stack.insert(0, w);
     }
 
     pub fn get_window(&self) -> Rc<GraphicsWindow> {
@@ -51,7 +49,32 @@ impl<'a> UI<'a> {
         self.resources.clone()
     }
 
-    pub fn event_dispatcher(&mut self) {
+    fn manage_windows(&mut self, e: &Event) {
+
+        let mut to_remove = Vec::new();
+
+        // update all windows one by one in order
+        for (idx, window) in self.stack.iter_mut().enumerate() {
+
+            let post_action = window.event_dispatcher(&e);
+
+            match post_action {
+
+                PostAction::Transfer => {},
+                PostAction::Stop => break,
+                PostAction::Pop => to_remove.push(idx),
+
+            }
+        }
+
+        // remove windows that scheduled to be removed earlier
+        for window_idx in to_remove {
+            self.stack.remove(window_idx);
+        }
+
+    }
+
+    pub fn event_dispatcher(&mut self) -> PostAction {
 
         let mut gl = GlGraphics::new(OPENGL);
 
@@ -65,24 +88,48 @@ impl<'a> UI<'a> {
 
                     match e {
 
+                        // paint all the windows first
                         Event::Render(args) => {
                             gl.draw(args.viewport(), |c, g| self.paint_all(c, g));
                         }
 
-                        _ => {
-                            // update all windows one by one in order
-                            for window in &mut self.stack {
-                                window.event_dispatcher(&e);
+                        // process other events
+                        ref some_event => {
+
+                            match some_event {
+
+                                &Event::Input(Input::Press(Button::Keyboard(Key::C))) => {
+                                    // clear board and reset counters
+
+                                    let confirm_window = Box::new(ConfirmationWindow::new(
+                                        self.get_resources(), self.get_engine()));
+
+                                    // TODO: add setting confirmation parameters
+
+                                    self.push_front(confirm_window);
+
+                                    let board = self.engine.borrow_mut().reset();
+                                }
+
+                                _ => {
+
+                                    self.manage_windows(&e);
+
+                                }
                             }
 
                         }
 
                     }
+
                 }
 
                 None => break
             }
         }
+
+        PostAction::Transfer
+
     }
 
     pub fn paint_all(&mut self, c: Context, g: &mut GlGraphics) {

@@ -1,8 +1,10 @@
 extern crate piston_window;
 
 
-use piston_window::{Context, Event, Input, Button, Key, MouseButton, Motion, line, rectangle};
-use super::WindowBase;
+use piston_window::{Context, Event, Input, Button, Key,
+                    MouseButton, Motion, line, rectangle};
+
+use super::{WindowBase, PostAction};
 
 use super::super::super::engine::Engine;
 pub use super::super::super::board::{Board, CellDesc};
@@ -115,7 +117,7 @@ impl<'a> WindowBase for GameBoard<'a> {
         self.draw_borders(&c, g);
     }
 
-    fn event_dispatcher(&mut self, event: &Event) {
+    fn event_dispatcher(&mut self, event: &Event) -> PostAction {
 
         match event {
 
@@ -256,13 +258,6 @@ impl<'a> WindowBase for GameBoard<'a> {
 
             }
 
-            &Event::Input(Input::Press(Button::Keyboard(Key::C))) => {
-                // clear board and reset counters
-
-                // TODO: Add confirmation window
-                let board = self.engine.borrow_mut().reset();
-            }
-
             &Event::Input(Input::Press(Button::Keyboard(Key::F))) => {
                 // reset camera coordinates to defaults
                 self.cam.reset();
@@ -272,6 +267,8 @@ impl<'a> WindowBase for GameBoard<'a> {
             _ => {}
 
         }
+
+        PostAction::Transfer
 
     }
 

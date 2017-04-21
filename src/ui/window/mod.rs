@@ -11,9 +11,16 @@ pub const GRAY: [f32; 4] = [100.0, 100.0, 100.0, 1.0];
 pub const RED: [f32; 4] = [255.0, 0.0, 0.0, 1.0];
 
 
+pub enum PostAction {
+    Transfer,
+    Stop,
+    Pop,
+}
+
+
 pub trait WindowBase {
 
     fn paint(&mut self, c: Context, g: &mut GlGraphics);
-    fn event_dispatcher(&mut self, event: &Event);
+    fn event_dispatcher(&mut self, event: &Event) -> PostAction;
 
 }
