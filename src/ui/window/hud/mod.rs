@@ -4,7 +4,7 @@ extern crate piston_window;
 
 use piston_window::{Context, Transformed, text, Event};
 
-use super::{WindowBase, PostAction};
+use super::{WindowBase, PostAction, States};
 use super::super::super::engine::Engine;
 use super::super::super::Resources;
 
@@ -52,7 +52,7 @@ impl<'a> WindowBase for HUDWindow<'a> {
 
     }
 
-    fn event_dispatcher(&mut self, event: &Event) -> PostAction {
+    fn event_dispatcher(&mut self, event: &Event, cur_state: &mut States) -> PostAction {
 
         PostAction::Transfer
 

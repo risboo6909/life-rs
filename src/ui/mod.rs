@@ -3,7 +3,7 @@ extern crate piston_window;
 
 mod window;
 
-use self::window::{WindowBase, PostAction};
+use self::window::{WindowBase, PostAction, States};
 use self::window::board::GameBoard;
 use self::window::hud::HUDWindow;
 use self::window::confirm::{ConfirmationWindow, UserChoice};
@@ -20,6 +20,9 @@ use std::cell::RefCell;
 use piston_window::{Event, Input, Button, Key, Context, clear};
 
 pub struct UI<'a> {
+
+    cur_state: States,
+
     stack: Vec<Box<WindowBase + 'a>>,
 
     window: Rc<GraphicsWindow>,
@@ -56,7 +59,7 @@ impl<'a> UI<'a> {
         // update all windows one by one in order
         for (idx, window) in self.stack.iter_mut().enumerate() {
 
-            let post_action = window.event_dispatcher(&e);
+            let post_action = window.event_dispatcher(&e, &mut self.cur_state);
 
             match post_action {
 
@@ -102,17 +105,23 @@ impl<'a> UI<'a> {
 
                                     // clear board and reset counters
 
+                                   self.cur_state = States::Paused;
+
                                     let confirm_window = Box::new(ConfirmationWindow::new(
                                         self.get_resources(), self.get_engine(),
 
-                                        |user_choice| {
-                                            if user_choice == UserChoice::Ok {}
-                                        }
+                                            |engine, user_choice, cur_state| {
+                                                if user_choice == UserChoice::Ok {
+                                                    engine.borrow_mut().reset();
+                                                } else if user_choice == UserChoice::Cancel {
+                                                    *cur_state = States::Working;
+                                                }
+                                            }
+
                                     ));
 
                                     self.push_front(confirm_window);
 
-                                    let board = self.engine.borrow_mut().reset();
                                 }
 
                                 _ => {
@@ -152,7 +161,10 @@ impl<'a> UI<'a> {
 
 pub fn new<'a>(window: Rc<GraphicsWindow>, engine: Rc<RefCell<Engine<'a>>>, resources: Rc<RefCell<Resources>>) -> UI<'a> {
 
-    let mut ui = UI { stack: Vec::new(),
+    let mut ui = UI {
+                      cur_state: States::Paused,
+
+                      stack: Vec::new(),
                       window: window,
                       engine: engine,
                       resources: resources,

@@ -18,9 +18,18 @@ pub enum PostAction {
 }
 
 
+#[derive(PartialEq, Debug)]
+pub enum States {
+    Working,
+    Draw,
+    Paused,
+    StepByStep,
+    Help,
+}
+
 pub trait WindowBase {
 
     fn paint(&mut self, c: Context, g: &mut GlGraphics);
-    fn event_dispatcher(&mut self, event: &Event) -> PostAction;
+    fn event_dispatcher(&mut self, event: &Event, cur_state: &mut States) -> PostAction;
 
 }

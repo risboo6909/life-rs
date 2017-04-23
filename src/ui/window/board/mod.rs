@@ -5,10 +5,11 @@ use piston_window::{Context, Event, Input, Button, Key,
                     MouseButton, Motion, line, rectangle};
 
 use super::{WindowBase, PostAction};
+use super::super::States;
 
 use super::super::super::engine::Engine;
-pub use super::super::super::board::{Board, CellDesc};
 use super::super::super::structs::{CellProp, GraphicsWindow};
+pub use super::super::super::board::{Board, CellDesc};
 
 use opengl_graphics::GlGraphics;
 
@@ -17,16 +18,6 @@ use std::cell::RefCell;
 use std::time::{Instant, Duration};
 
 use cam::Cam;
-
-
-#[derive(PartialEq, Debug)]
-enum States {
-    Working,
-    Draw,
-    Paused,
-    StepByStep,
-    Help,
-}
 
 
 pub struct GameBoard<'a> {
@@ -42,8 +33,6 @@ pub struct GameBoard<'a> {
 
     last_iter_time: Instant,
     last_pos: Option<[f64; 2]>,
-
-    cur_state: States
 
 }
 
@@ -64,7 +53,6 @@ impl<'a> GameBoard<'a> {
             last_iter_time: Instant::now(),
             last_pos: None,
 
-            cur_state: States::Paused,
         }
 
     }
@@ -98,22 +86,22 @@ impl<'a> WindowBase for GameBoard<'a> {
         self.draw_borders(&c, g);
     }
 
-    fn event_dispatcher(&mut self, event: &Event) -> PostAction {
+    fn event_dispatcher(&mut self, event: &Event, cur_state: &mut States) -> PostAction {
 
         match event {
 
             &Event::Update(_) => {
 
-                if self.cur_state == States::Working || self.cur_state == States::StepByStep {
+                if *cur_state == States::Working || *cur_state == States::StepByStep {
                     if !self.render ||
                         Instant::now() - self.last_iter_time >= Duration::from_millis(3) ||
-                        self.cur_state == States::StepByStep {
+                        *cur_state == States::StepByStep {
 
                         self.engine.borrow_mut().iterations(1);
                         self.last_iter_time = Instant::now();
 
-                        if self.cur_state == States::StepByStep {
-                            self.cur_state = States::Paused;
+                        if *cur_state == States::StepByStep {
+                            *cur_state = States::Paused;
                         }
 
                     }
@@ -123,19 +111,19 @@ impl<'a> WindowBase for GameBoard<'a> {
 
             &Event::Input(Input::Press(Button::Keyboard(Key::P))) => {
                 // pause/unpause
-                if self.cur_state == States::Working {
-                    self.cur_state = States::Paused;
+                if *cur_state == States::Working {
+                    *cur_state = States::Paused;
                     // always enable rendering in pause mode
                     self.render = true;
                 } else {
-                    self.cur_state = States::Working;
+                    *cur_state = States::Working;
                 }
             }
 
             &Event::Input(Input::Press(Button::Keyboard(Key::S))) => {
                 // step by step mode
-                if self.cur_state == States::Working || self.cur_state == States::Paused {
-                    self.cur_state = States::StepByStep;
+                if *cur_state == States::Working || *cur_state == States::Paused {
+                    *cur_state = States::StepByStep;
                     // always enable rendering in step by step mode
                     self.render = true;
                 }
@@ -149,7 +137,7 @@ impl<'a> WindowBase for GameBoard<'a> {
 
             // mouse controls ->
             &Event::Input(Input::Press(Button::Mouse(MouseButton::Left))) => {
-                self.cur_state = States::Draw;
+                *cur_state = States::Draw;
             }
 
             &Event::Input(Input::Release(Button::Mouse(MouseButton::Left))) => {
@@ -157,12 +145,12 @@ impl<'a> WindowBase for GameBoard<'a> {
                     let pos = self.last_pos.unwrap();
                     self.born_or_kill(true, pos[0], pos[1]);
 
-                    self.cur_state = States::Paused;
+                    *cur_state = States::Paused;
                 }
             }
 
             &Event::Input(Input::Move(Motion::MouseCursor(x, y))) => {
-                if self.cur_state == States::Draw {
+                if *cur_state == States::Draw {
                     self.born_or_kill(false, x, y);
                 }
                 self.last_pos = Some([x, y]);
@@ -228,7 +216,7 @@ impl<'a> WindowBase for GameBoard<'a> {
             &Event::Input(Input::Press(Button::Keyboard(Key::R))) => {
 
                 // in pause mode - fill board with a random pattern
-                if self.cur_state == States::Paused {
+                if *cur_state == States::Paused {
                     let board = self.engine.borrow().create_random(0.3);
                     self.engine.borrow_mut().set_board(board);
                 }
