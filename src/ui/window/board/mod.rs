@@ -134,7 +134,6 @@ impl<'a> WindowBase for GameBoard<'a> {
                 self.show_grid = !self.show_grid;
             }
 
-
             // mouse controls ->
             &Event::Input(Input::Press(Button::Mouse(MouseButton::Left))) => {
                 *cur_state = States::Draw;

@@ -105,7 +105,7 @@ impl<'a> UI<'a> {
 
                                     // clear board and reset counters
 
-                                   self.cur_state = States::Paused;
+                                    self.cur_state = States::Paused;
 
                                     let confirm_window = Box::new(ConfirmationWindow::new(
                                         self.get_resources(), self.get_engine(),
@@ -116,7 +116,9 @@ impl<'a> UI<'a> {
                                                 } else if user_choice == UserChoice::Cancel {
                                                     *cur_state = States::Working;
                                                 }
-                                            }
+                                            }, "Are you sure you want to clear the board?",
+                                        self.get_window().get_width(),
+                                        self.get_window().get_height()
 
                                     ));
 

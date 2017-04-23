@@ -2,7 +2,8 @@
 
 use super::{WindowBase, PostAction, States};
 
-use piston_window::{Input, Button, Key, Context, Event, rectangle};
+use piston_window::{Input, Button, Key, Context, Event, Transformed, rectangle, text};
+use piston_window::character::CharacterCache;
 use opengl_graphics::GlGraphics;
 
 use super::super::super::engine::Engine;
@@ -17,19 +18,31 @@ pub enum UserChoice {
     Cancel,
 }
 
-pub struct ConfirmationWindow<'a, F> where F: FnMut(Rc<RefCell<Engine<'a>>>, UserChoice, &mut States) {
+pub struct ConfirmationWindow<'a, F>
+    where F: FnMut(Rc<RefCell<Engine<'a>>>, UserChoice, &mut States) {
+    msg: &'a str,
+
+    scr_width: f64,
+    scr_height: f64,
+
     engine: Rc<RefCell<Engine<'a>>>,
     resources: Rc<RefCell<Resources>>,
 
     callback: F,
 }
 
-impl<'a, F> ConfirmationWindow<'a, F> where F: FnMut(Rc<RefCell<Engine<'a>>>, UserChoice, &mut States)  {
+impl<'a, F> ConfirmationWindow<'a, F>
+    where F: FnMut(Rc<RefCell<Engine<'a>>>, UserChoice, &mut States)  {
 
     pub fn new(resources: Rc<RefCell<Resources>>, engine: Rc<RefCell<Engine<'a>>>,
-               callback: F) -> ConfirmationWindow<'a, F> {
+               callback: F, msg: &'a str, width: f64, height: f64) -> ConfirmationWindow<'a, F> {
 
         ConfirmationWindow {
+            msg: msg,
+
+            scr_width: width,
+            scr_height: height,
+
             engine: engine,
             resources: resources,
 
@@ -39,11 +52,21 @@ impl<'a, F> ConfirmationWindow<'a, F> where F: FnMut(Rc<RefCell<Engine<'a>>>, Us
 
 }
 
-impl<'a, F> WindowBase for ConfirmationWindow<'a, F> where F: FnMut(Rc<RefCell<Engine<'a>>>, UserChoice, &mut States) {
+impl<'a, F> WindowBase for ConfirmationWindow<'a, F> where F: FnMut(Rc<RefCell<Engine<'a>>>,
+    UserChoice, &mut States) {
 
     fn paint(&mut self, c: Context, g: &mut GlGraphics) {
-        rectangle([1.0, 1.0, 1.0, 0.5],
-                  [0.0, 0.0, 20.0, 20.0], c.transform, g);
+
+        let font_size = 15u32;
+        let msg_width = self.resources.borrow_mut().font.width(font_size, self.msg);
+
+        rectangle([0.0, 0.0, 0.8, 1.0],
+                  [80.0, 100.0, msg_width, 30.0], c.transform, g);
+
+        text(super::GREEN, font_size,
+             &format!("{}", self.msg),
+             &mut self.resources.borrow_mut().font,
+             c.trans(100.0, 100.0).transform, g);
     }
 
     fn event_dispatcher(&mut self, event: &Event, cur_state: &mut States) -> PostAction {
