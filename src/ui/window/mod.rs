@@ -9,6 +9,7 @@ pub use piston_window::{Context, line, rectangle, text, Event};
 pub const GREEN: [f32; 4] = [0.5, 1.0, 0.0, 1.0];
 pub const GRAY: [f32; 4] = [100.0, 100.0, 100.0, 1.0];
 pub const RED: [f32; 4] = [255.0, 0.0, 0.0, 1.0];
+pub const WHITE: [f32; 4] = [1.0, 1.0, 1.0, 1.0];
 
 
 pub enum PostAction {

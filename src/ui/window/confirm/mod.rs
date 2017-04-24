@@ -19,7 +19,8 @@ pub enum UserChoice {
 }
 
 pub struct ConfirmationWindow<'a, F>
-    where F: FnMut(Rc<RefCell<Engine<'a>>>, UserChoice, &mut States) {
+    where F: FnMut(Rc<RefCell<Engine<'a>>>, UserChoice) {
+
     msg: &'a str,
 
     scr_width: f64,
@@ -32,7 +33,7 @@ pub struct ConfirmationWindow<'a, F>
 }
 
 impl<'a, F> ConfirmationWindow<'a, F>
-    where F: FnMut(Rc<RefCell<Engine<'a>>>, UserChoice, &mut States)  {
+    where F: FnMut(Rc<RefCell<Engine<'a>>>, UserChoice)  {
 
     pub fn new(resources: Rc<RefCell<Resources>>, engine: Rc<RefCell<Engine<'a>>>,
                callback: F, msg: &'a str, width: f64, height: f64) -> ConfirmationWindow<'a, F> {
@@ -53,20 +54,37 @@ impl<'a, F> ConfirmationWindow<'a, F>
 }
 
 impl<'a, F> WindowBase for ConfirmationWindow<'a, F> where F: FnMut(Rc<RefCell<Engine<'a>>>,
-    UserChoice, &mut States) {
+    UserChoice) {
 
     fn paint(&mut self, c: Context, g: &mut GlGraphics) {
 
+        let prompt = "(Y/N)";
+
         let font_size = 15u32;
+
         let msg_width = self.resources.borrow_mut().font.width(font_size, self.msg);
+        let prompt_width = self.resources.borrow_mut().font.width(font_size, prompt);
+
+        let msg_offset_x = 100.0;
+
+        let prompt_offset_x = msg_offset_x + 0.5 * (msg_width - prompt_width);
+
+        rectangle([0.8, 0.0, 0.0, 1.0],
+                  [70.0, 70.0, msg_width + 60.0, 70.0], c.transform, g);
 
         rectangle([0.0, 0.0, 0.8, 1.0],
-                  [80.0, 100.0, msg_width, 30.0], c.transform, g);
+                  [80.0, 80.0, msg_width + 40.0, 50.0], c.transform, g);
 
-        text(super::GREEN, font_size,
+        text(super::WHITE, font_size,
              &format!("{}", self.msg),
              &mut self.resources.borrow_mut().font,
-             c.trans(100.0, 100.0).transform, g);
+             c.trans(msg_offset_x, 100.0).transform, g);
+
+        text(super::WHITE, font_size,
+             &prompt,
+             &mut self.resources.borrow_mut().font,
+             c.trans(prompt_offset_x, 120.0).transform, g);
+
     }
 
     fn event_dispatcher(&mut self, event: &Event, cur_state: &mut States) -> PostAction {
@@ -74,12 +92,12 @@ impl<'a, F> WindowBase for ConfirmationWindow<'a, F> where F: FnMut(Rc<RefCell<E
         match event {
 
              &Event::Input(Input::Press(Button::Keyboard(Key::Y))) => {
-                 (self.callback)(self.engine.clone(), UserChoice::Ok, cur_state);
+                 (self.callback)(self.engine.clone(), UserChoice::Ok);
                  PostAction::Pop
              }
 
              &Event::Input(Input::Press(Button::Keyboard(Key::N))) => {
-                 (self.callback)(self.engine.clone(), UserChoice::Cancel, cur_state);
+                 (self.callback)(self.engine.clone(), UserChoice::Cancel);
                  PostAction::Pop
              }
 

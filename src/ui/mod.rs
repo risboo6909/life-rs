@@ -110,11 +110,9 @@ impl<'a> UI<'a> {
                                     let confirm_window = Box::new(ConfirmationWindow::new(
                                         self.get_resources(), self.get_engine(),
 
-                                            |engine, user_choice, cur_state| {
+                                            |engine, user_choice| {
                                                 if user_choice == UserChoice::Ok {
                                                     engine.borrow_mut().reset();
-                                                } else if user_choice == UserChoice::Cancel {
-                                                    *cur_state = States::Working;
                                                 }
                                             }, "Are you sure you want to clear the board?",
                                         self.get_window().get_width(),
@@ -153,7 +151,7 @@ impl<'a> UI<'a> {
         clear([0.0, 0.0, 0.0, 1.0], g);
 
         // and paint all windows one by one in order
-        for window in &mut self.stack {
+        for window in &mut self.stack.iter_mut().rev() {
             window.paint(c, g)
         }
 
