@@ -65,25 +65,34 @@ impl<'a, F> WindowBase for ConfirmationWindow<'a, F> where F: FnMut(Rc<RefCell<E
         let msg_width = self.resources.borrow_mut().font.width(font_size, self.msg);
         let prompt_width = self.resources.borrow_mut().font.width(font_size, prompt);
 
-        let msg_offset_x = 100.0;
+        let prompt_outer_window_width = msg_width + 60.0;
+        let prompt_outer_window_height = 70.0;
+
+        let prompt_window_offset_x =  0.5 * (self.scr_width - prompt_outer_window_width);
+        let prompt_window_offset_y =  0.5 * (self.scr_height - prompt_outer_window_height);
+
+        let msg_offset_x = prompt_window_offset_x + 0.5 * (prompt_outer_window_width - msg_width);
+        let msg_offset_y = prompt_window_offset_y;
 
         let prompt_offset_x = msg_offset_x + 0.5 * (msg_width - prompt_width);
 
         rectangle([0.8, 0.0, 0.0, 1.0],
-                  [70.0, 70.0, msg_width + 60.0, 70.0], c.transform, g);
+                  [prompt_window_offset_x, prompt_window_offset_y, prompt_outer_window_width,
+                      prompt_outer_window_height], c.transform, g);
 
         rectangle([0.0, 0.0, 0.8, 1.0],
-                  [80.0, 80.0, msg_width + 40.0, 50.0], c.transform, g);
+                  [prompt_window_offset_x + 10.0, prompt_window_offset_y + 10.0, prompt_outer_window_width - 20.0,
+                      prompt_outer_window_height - 20.0], c.transform, g);
 
         text(super::WHITE, font_size,
              &format!("{}", self.msg),
              &mut self.resources.borrow_mut().font,
-             c.trans(msg_offset_x, 100.0).transform, g);
+             c.trans(msg_offset_x, msg_offset_y).transform, g);
 
         text(super::WHITE, font_size,
              &prompt,
              &mut self.resources.borrow_mut().font,
-             c.trans(prompt_offset_x, 120.0).transform, g);
+             c.trans(prompt_offset_x, msg_offset_y + 20.0).transform, g);
 
     }
 
