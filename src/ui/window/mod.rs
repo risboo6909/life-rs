@@ -33,8 +33,8 @@ pub enum States {
 
 pub trait WindowBase {
 
-    fn paint(&mut self, c: Context, g: &mut GlGraphics);
-    fn event_dispatcher(&mut self, event: &Event, cur_state: &Cell<States>) -> PostAction;
+    fn paint(&mut self, Context, &mut GlGraphics);
+    fn event_dispatcher(&mut self, &Event, &Cell<States>) -> PostAction;
     fn is_modal(&self) -> bool { false }
 
 }
