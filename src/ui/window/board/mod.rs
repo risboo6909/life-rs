@@ -203,17 +203,11 @@ impl<'a> WindowBase for GameBoard<'a> {
 
             // misc controls ->
             &Event::Input(Input::Press(Button::Keyboard(Key::R))) => {
-
                 // in pause mode - fill board with a random pattern
-                if cur_state.get() == States::Paused {
-                    let board = self.engine.borrow().create_random(0.3);
-                    self.engine.borrow_mut().set_board(board);
-                }
-                else {
+                if cur_state.get() != States::Paused {
                     // otherwise enable/disable rendering
                     self.render = !self.render;
                 }
-
             }
 
             &Event::Input(Input::Press(Button::Keyboard(Key::F))) => {

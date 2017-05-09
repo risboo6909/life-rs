@@ -1,4 +1,4 @@
-// Simple confirmation window
+// Simple info window
 
 use super::{WindowBase, PostAction, States};
 
@@ -12,14 +12,8 @@ use super::super::super::Resources;
 use std::rc::Rc;
 use std::cell::{RefCell, Cell};
 
-#[derive(PartialEq)]
-pub enum UserChoice {
-    Ok,
-    Cancel,
-}
 
-pub struct ConfirmationWindow<'a, F>
-    where F: FnMut(Rc<RefCell<Engine<'a>>>, UserChoice) {
+pub struct InfoWindow<'a> {
 
     msg: &'a str,
 
@@ -29,36 +23,32 @@ pub struct ConfirmationWindow<'a, F>
     engine: Rc<RefCell<Engine<'a>>>,
     resources: Rc<RefCell<Resources>>,
 
-    callback: F,
 }
 
-impl<'a, F> ConfirmationWindow<'a, F>
-    where F: FnMut(Rc<RefCell<Engine<'a>>>, UserChoice)  {
+impl<'a> InfoWindow<'a> {
 
     pub fn new(resources: Rc<RefCell<Resources>>, engine: Rc<RefCell<Engine<'a>>>,
-               callback: F, msg: &'a str, width: f64, height: f64) -> Self {
+               msg: &'a str, width: f64, height: f64) -> Self {
 
-        ConfirmationWindow {
+        InfoWindow {
             msg: msg,
 
             scr_width: width,
             scr_height: height,
 
             engine: engine,
-            resources: resources,
+            resources: resources
 
-            callback: callback
         }
     }
 
 }
 
-impl<'a, F> WindowBase for ConfirmationWindow<'a, F> where F: FnMut(Rc<RefCell<Engine<'a>>>,
-    UserChoice) {
+impl<'a> WindowBase for InfoWindow<'a> {
 
     fn paint(&mut self, c: Context, g: &mut GlGraphics) {
 
-        let prompt = "(Y/N)";
+        let prompt = "press Enter to continue";
 
         let font_size = 15u32;
 
@@ -76,7 +66,7 @@ impl<'a, F> WindowBase for ConfirmationWindow<'a, F> where F: FnMut(Rc<RefCell<E
 
         let prompt_offset_x = msg_offset_x + 0.5 * (msg_width - prompt_width);
 
-        rectangle([0.8, 0.0, 0.0, 1.0],
+        rectangle([0.4, 0.4, 0.0, 1.0],
                   [prompt_window_offset_x, prompt_window_offset_y, prompt_outer_window_width,
                       prompt_outer_window_height], c.transform, g);
 
@@ -100,15 +90,9 @@ impl<'a, F> WindowBase for ConfirmationWindow<'a, F> where F: FnMut(Rc<RefCell<E
 
         match event {
 
-             &Event::Input(Input::Press(Button::Keyboard(Key::Y))) => {
-                 (self.callback)(self.engine.clone(), UserChoice::Ok);
+             &Event::Input(Input::Press(Button::Keyboard(Key::Return))) => {
                  PostAction::Pop
-             }
-
-             &Event::Input(Input::Press(Button::Keyboard(Key::N))) => {
-                 (self.callback)(self.engine.clone(), UserChoice::Cancel);
-                 PostAction::Pop
-             }
+             },
 
             _ => PostAction::Stop
 

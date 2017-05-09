@@ -7,6 +7,7 @@ use self::window::{WindowBase, PostAction, States};
 use self::window::board::GameBoard;
 use self::window::hud::HUDWindow;
 use self::window::confirm::{ConfirmationWindow, UserChoice};
+use self::window::info::InfoWindow;
 
 pub use super::structs::{GraphicsWindow, CellProp};
 
@@ -37,7 +38,11 @@ impl<'a> UI<'a> {
     }
 
     pub fn push_front(&mut self, w: Box<WindowBase + 'a>) {
-        self.stack.insert(0, w);
+        if self.stack.len() != 0 {
+            if !self.stack[0].is_modal() {
+                self.stack.insert(0, w);
+            }
+        }
     }
 
     pub fn get_window(&self) -> Rc<GraphicsWindow> {
@@ -50,6 +55,30 @@ impl<'a> UI<'a> {
 
     pub fn get_resources(&self) -> Rc<RefCell<Resources>> {
         self.resources.clone()
+    }
+
+    fn create_prompt_window<F: 'a>(&mut self, msg: &'a str, callback: F)  where
+        F: FnMut(Rc<RefCell<Engine<'a>>>, UserChoice) {
+
+        let confirm_window = Box::new(ConfirmationWindow::new(self.get_resources(), self.get_engine(),
+                                         callback, msg,
+                                         self.get_window().get_width(),
+                                         self.get_window().get_height()));
+
+        self.push_front(confirm_window);
+    }
+
+    fn create_info_window(&mut self, msg: &'a str) {
+
+        let info_window = Box::new(InfoWindow::new(
+            self.get_resources(), self.get_engine(),
+            msg,
+            self.get_window().get_width(),
+            self.get_window().get_height()
+        ));
+
+        self.push_front(info_window);
+
     }
 
     fn manage_windows(&mut self, e: &Event) {
@@ -107,21 +136,14 @@ impl<'a> UI<'a> {
 
                                     self.cur_state.set(States::Paused);
 
-                                    let confirm_window = Box::new(ConfirmationWindow::new(
-                                        self.get_resources(), self.get_engine(),
-
-                                            |engine, user_choice| {
-                                                if user_choice == UserChoice::Ok {
-                                                    engine.borrow_mut().reset();
-                                                }
-                                            }, "Are you sure you want to clear the board?",
-                                        self.get_window().get_width(),
-                                        self.get_window().get_height()
-
-                                    ));
-
-                                    self.push_front(confirm_window);
-
+                                    self.create_prompt_window(
+                                        "Are you sure you want to clear the board?",
+                                        |engine, user_choice| {
+                                            if user_choice == UserChoice::Ok {
+                                                engine.borrow_mut().reset();
+                                            }
+                                        }
+                                    );
                                 }
 
                                 &Event::Input(Input::Press(Button::Keyboard(Key::P))) => {
@@ -137,6 +159,30 @@ impl<'a> UI<'a> {
                                     // enter step by step mode
                                     if self.cur_state.get() == States::Working || self.cur_state.get() == States::Paused {
                                         self.cur_state.set(States::StepByStep);
+                                    }
+                                }
+
+                                &Event::Input(Input::Press(Button::Keyboard(Key::R))) => {
+                                    if self.cur_state.get() == States::Paused {
+
+                                        let engine = self.get_engine();
+
+                                        if engine.borrow().get_board().is_infinite() {
+                                            self.create_info_window("Can't generate random \
+                                            configuration for infinite board");
+                                        } else {
+                                            self.create_prompt_window(
+                                                "Current position will be lost, ok?",
+                                                |engine, user_choice| {
+                                                    if user_choice == UserChoice::Ok {
+                                                        // generate random board
+                                                        let board = engine.borrow().create_random(0.3);
+                                                        engine.borrow_mut().set_board(board);
+                                                    }
+                                                }
+                                            );
+                                        }
+
                                     }
                                 }
 

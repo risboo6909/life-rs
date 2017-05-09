@@ -172,6 +172,12 @@ impl<'a> Board<'a> {
         self.get_cell(col, row) != Cell::Empty
     }
 
+    pub fn is_infinite(&self) -> bool {
+        // returns true if board is infinite at at least one direction
+        // and false otherwise
+        self.cols.is_none() || self.rows.is_none()
+    }
+
     pub fn get_cell(&self, col: isize, row: isize) -> Cell {
         // if cell is not yet initialized it is considered as free
         let (col, row) = self.constrain_board(col, row);
