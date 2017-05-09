@@ -124,16 +124,32 @@ impl<'a> UI<'a> {
 
                                 }
 
-                                _ => {
-
-                                    self.manage_windows(&e);
-
+                                &Event::Input(Input::Press(Button::Keyboard(Key::P))) => {
+                                    // pause/unpause
+                                    if self.cur_state.get() == States::Working {
+                                        self.cur_state.set(States::Paused);
+                                    } else {
+                                        self.cur_state.set(States::Working);
+                                    }
                                 }
+
+                                &Event::Input(Input::Press(Button::Keyboard(Key::S))) => {
+                                    // enter step by step mode
+                                    if self.cur_state.get() == States::Working || self.cur_state.get() == States::Paused {
+                                        self.cur_state.set(States::StepByStep);
+                                    }
+                                }
+
+                                // do nothing if nothing matched
+                                _ => {}
+
                             }
 
                         }
 
                     }
+
+                    self.manage_windows(&e);
 
                 }
 

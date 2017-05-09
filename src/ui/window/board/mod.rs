@@ -110,23 +110,13 @@ impl<'a> WindowBase for GameBoard<'a> {
             }
 
             &Event::Input(Input::Press(Button::Keyboard(Key::P))) => {
-                // pause/unpause
-                if cur_state.get() == States::Working {
-                    cur_state.set(States::Paused);
-                    // always enable rendering in pause mode
-                    self.render = true;
-                } else {
-                    cur_state.set(States::Working);
-                }
+                // always enable rendering in pause mode
+                self.render = true;
             }
 
             &Event::Input(Input::Press(Button::Keyboard(Key::S))) => {
-                // step by step mode
-                if cur_state.get() == States::Working || cur_state.get() == States::Paused {
-                    cur_state.set(States::StepByStep);
-                    // always enable rendering in step by step mode
-                    self.render = true;
-                }
+                // always enable rendering in step by step mode
+                self.render = true;
             }
 
             &Event::Input(Input::Press(Button::Keyboard(Key::G))) => {
