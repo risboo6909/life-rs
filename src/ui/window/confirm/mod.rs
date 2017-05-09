@@ -10,7 +10,7 @@ use super::super::super::engine::Engine;
 use super::super::super::Resources;
 
 use std::rc::Rc;
-use std::cell::RefCell;
+use std::cell::{RefCell, Cell};
 
 #[derive(PartialEq)]
 pub enum UserChoice {
@@ -72,7 +72,7 @@ impl<'a, F> WindowBase for ConfirmationWindow<'a, F> where F: FnMut(Rc<RefCell<E
         let prompt_window_offset_y =  0.5 * (self.scr_height - prompt_outer_window_height);
 
         let msg_offset_x = prompt_window_offset_x + 0.5 * (prompt_outer_window_width - msg_width);
-        let msg_offset_y = prompt_window_offset_y;
+        let msg_offset_y = prompt_window_offset_y + 10.0 + font_size as f64;
 
         let prompt_offset_x = msg_offset_x + 0.5 * (msg_width - prompt_width);
 
@@ -96,7 +96,7 @@ impl<'a, F> WindowBase for ConfirmationWindow<'a, F> where F: FnMut(Rc<RefCell<E
 
     }
 
-    fn event_dispatcher(&mut self, event: &Event, cur_state: &mut States) -> PostAction {
+    fn event_dispatcher(&mut self, event: &Event, cur_state: &Cell<States>) -> PostAction {
 
         match event {
 

@@ -15,13 +15,13 @@ use opengl_graphics::GlGraphics;
 use engine::Engine;
 
 use std::rc::Rc;
-use std::cell::RefCell;
+use std::cell::{RefCell, Cell};
 
 use piston_window::{Event, Input, Button, Key, Context, clear};
 
 pub struct UI<'a> {
 
-    cur_state: States,
+    cur_state: Cell<States>,
 
     stack: Vec<Box<WindowBase + 'a>>,
 
@@ -59,7 +59,7 @@ impl<'a> UI<'a> {
         // update all windows one by one in order
         for (idx, window) in self.stack.iter_mut().enumerate() {
 
-            let post_action = window.event_dispatcher(&e, &mut self.cur_state);
+            let post_action = window.event_dispatcher(&e, &self.cur_state);
 
             match post_action {
 
@@ -105,7 +105,7 @@ impl<'a> UI<'a> {
 
                                     // clear board and reset counters
 
-                                    self.cur_state = States::Paused;
+                                    self.cur_state.set(States::Paused);
 
                                     let confirm_window = Box::new(ConfirmationWindow::new(
                                         self.get_resources(), self.get_engine(),
@@ -162,7 +162,7 @@ impl<'a> UI<'a> {
 pub fn new<'a>(window: Rc<GraphicsWindow>, engine: Rc<RefCell<Engine<'a>>>, resources: Rc<RefCell<Resources>>) -> UI<'a> {
 
     let mut ui = UI {
-                      cur_state: States::Paused,
+                      cur_state: Cell::new(States::Paused),
 
                       stack: Vec::new(),
                       window: window,

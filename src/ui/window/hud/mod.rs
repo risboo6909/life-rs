@@ -11,7 +11,7 @@ use super::super::super::Resources;
 use opengl_graphics::GlGraphics;
 
 use std::rc::Rc;
-use std::cell::RefCell;
+use std::cell::{RefCell, Cell};
 
 
 pub struct HUDWindow<'a> {
@@ -52,7 +52,7 @@ impl<'a> WindowBase for HUDWindow<'a> {
 
     }
 
-    fn event_dispatcher(&mut self, event: &Event, cur_state: &mut States) -> PostAction {
+    fn event_dispatcher(&mut self, event: &Event, cur_state: &Cell<States>) -> PostAction {
 
         PostAction::Transfer
 

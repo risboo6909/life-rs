@@ -3,6 +3,7 @@ pub mod board;
 pub mod hud;
 
 use opengl_graphics::GlGraphics;
+use std::cell::Cell;
 
 pub use piston_window::{Context, line, rectangle, text, Event};
 
@@ -19,7 +20,7 @@ pub enum PostAction {
 }
 
 
-#[derive(PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum States {
     Working,
     Draw,
@@ -31,6 +32,6 @@ pub enum States {
 pub trait WindowBase {
 
     fn paint(&mut self, c: Context, g: &mut GlGraphics);
-    fn event_dispatcher(&mut self, event: &Event, cur_state: &mut States) -> PostAction;
+    fn event_dispatcher(&mut self, event: &Event, cur_state: &Cell<States>) -> PostAction;
 
 }

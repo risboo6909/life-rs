@@ -14,7 +14,7 @@ pub use super::super::super::board::{Board, CellDesc};
 use opengl_graphics::GlGraphics;
 
 use std::rc::Rc;
-use std::cell::RefCell;
+use std::cell::{RefCell, Cell};
 use std::time::{Instant, Duration};
 
 use cam::Cam;
@@ -86,22 +86,22 @@ impl<'a> WindowBase for GameBoard<'a> {
         self.draw_borders(&c, g);
     }
 
-    fn event_dispatcher(&mut self, event: &Event, cur_state: &mut States) -> PostAction {
+    fn event_dispatcher(&mut self, event: &Event, cur_state: &Cell<States>) -> PostAction {
 
         match event {
 
             &Event::Update(_) => {
 
-                if *cur_state == States::Working || *cur_state == States::StepByStep {
+                if cur_state.get() == States::Working || cur_state.get() == States::StepByStep {
                     if !self.render ||
                         Instant::now() - self.last_iter_time >= Duration::from_millis(3) ||
-                        *cur_state == States::StepByStep {
+                        cur_state.get() == States::StepByStep {
 
                         self.engine.borrow_mut().iterations(1);
                         self.last_iter_time = Instant::now();
 
-                        if *cur_state == States::StepByStep {
-                            *cur_state = States::Paused;
+                        if cur_state.get() == States::StepByStep {
+                            cur_state.set(States::Paused);
                         }
 
                     }
@@ -111,19 +111,19 @@ impl<'a> WindowBase for GameBoard<'a> {
 
             &Event::Input(Input::Press(Button::Keyboard(Key::P))) => {
                 // pause/unpause
-                if *cur_state == States::Working {
-                    *cur_state = States::Paused;
+                if cur_state.get() == States::Working {
+                    cur_state.set(States::Paused);
                     // always enable rendering in pause mode
                     self.render = true;
                 } else {
-                    *cur_state = States::Working;
+                    cur_state.set(States::Working);
                 }
             }
 
             &Event::Input(Input::Press(Button::Keyboard(Key::S))) => {
                 // step by step mode
-                if *cur_state == States::Working || *cur_state == States::Paused {
-                    *cur_state = States::StepByStep;
+                if cur_state.get() == States::Working || cur_state.get() == States::Paused {
+                    cur_state.set(States::StepByStep);
                     // always enable rendering in step by step mode
                     self.render = true;
                 }
@@ -136,7 +136,7 @@ impl<'a> WindowBase for GameBoard<'a> {
 
             // mouse controls ->
             &Event::Input(Input::Press(Button::Mouse(MouseButton::Left))) => {
-                *cur_state = States::Draw;
+                cur_state.set(States::Draw);
             }
 
             &Event::Input(Input::Release(Button::Mouse(MouseButton::Left))) => {
@@ -144,12 +144,12 @@ impl<'a> WindowBase for GameBoard<'a> {
                     let pos = self.last_pos.unwrap();
                     self.born_or_kill(true, pos[0], pos[1]);
 
-                    *cur_state = States::Paused;
+                    cur_state.set(States::Paused);
                 }
             }
 
             &Event::Input(Input::Move(Motion::MouseCursor(x, y))) => {
-                if *cur_state == States::Draw {
+                if cur_state.get() == States::Draw {
                     self.born_or_kill(false, x, y);
                 }
                 self.last_pos = Some([x, y]);
@@ -215,7 +215,7 @@ impl<'a> WindowBase for GameBoard<'a> {
             &Event::Input(Input::Press(Button::Keyboard(Key::R))) => {
 
                 // in pause mode - fill board with a random pattern
-                if *cur_state == States::Paused {
+                if cur_state.get() == States::Paused {
                     let board = self.engine.borrow().create_random(0.3);
                     self.engine.borrow_mut().set_board(board);
                 }
