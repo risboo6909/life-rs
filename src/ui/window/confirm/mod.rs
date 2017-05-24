@@ -1,9 +1,8 @@
 // Simple confirmation window
 
-use super::{WindowBase, PostAction, States};
+use super::{WindowBase, InfoWindowTrait, PostAction, States};
 
-use piston_window::{Input, Button, Key, Context, Event, Transformed, rectangle, text};
-use piston_window::character::CharacterCache;
+use piston_window::{Input, Button, Key, Context, Event};
 use opengl_graphics::GlGraphics;
 
 use super::super::super::engine::Engine;
@@ -53,46 +52,21 @@ impl<'a, F> ConfirmationWindow<'a, F>
 
 }
 
+impl<'a, F> InfoWindowTrait for ConfirmationWindow<'a, F> where F: FnMut(Rc<RefCell<Engine<'a>>>,
+    UserChoice) {
+
+}
+
 impl<'a, F> WindowBase for ConfirmationWindow<'a, F> where F: FnMut(Rc<RefCell<Engine<'a>>>,
     UserChoice) {
 
     fn paint(&mut self, c: Context, g: &mut GlGraphics) {
 
-        let prompt = "(Y/N)";
+        let (scr_width, scr_height) = (self.scr_width, self.scr_height);
+        let resources = self.resources.clone();
 
-        let font_size = 15u32;
-
-        let msg_width = self.resources.borrow_mut().font.width(font_size, self.msg);
-        let prompt_width = self.resources.borrow_mut().font.width(font_size, prompt);
-
-        let prompt_outer_window_width = msg_width + 60.0;
-        let prompt_outer_window_height = 60.0;
-
-        let prompt_window_offset_x =  0.5 * (self.scr_width - prompt_outer_window_width);
-        let prompt_window_offset_y =  0.5 * (self.scr_height - prompt_outer_window_height);
-
-        let msg_offset_x = prompt_window_offset_x + 0.5 * (prompt_outer_window_width - msg_width);
-        let msg_offset_y = prompt_window_offset_y + 10.0 + font_size as f64;
-
-        let prompt_offset_x = msg_offset_x + 0.5 * (msg_width - prompt_width);
-
-        rectangle([0.8, 0.0, 0.0, 1.0],
-                  [prompt_window_offset_x, prompt_window_offset_y, prompt_outer_window_width,
-                      prompt_outer_window_height], c.transform, g);
-
-        rectangle([0.0, 0.0, 0.8, 1.0],
-                  [prompt_window_offset_x + 10.0, prompt_window_offset_y + 10.0, prompt_outer_window_width - 20.0,
-                      prompt_outer_window_height - 20.0], c.transform, g);
-
-        text(super::WHITE, font_size,
-             &format!("{}", self.msg),
-             &mut self.resources.borrow_mut().font,
-             c.trans(msg_offset_x, msg_offset_y).transform, g);
-
-        text(super::GREEN, font_size,
-             &prompt,
-             &mut self.resources.borrow_mut().font,
-             c.trans(prompt_offset_x, msg_offset_y + 20.0).transform, g);
+        self.paint_info_window(c, g, scr_width, scr_height,
+                               resources, self.msg, "(Y/N)");
 
     }
 
