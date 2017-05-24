@@ -1,13 +1,13 @@
 extern crate opengl_graphics;
 extern crate piston_window;
 
-mod window;
+mod windows;
 
-use self::window::{WindowBase, PostAction, States};
-use self::window::board::GameBoard;
-use self::window::hud::HUDWindow;
-use self::window::confirm::{ConfirmationWindow, UserChoice};
-use self::window::info::InfoWindow;
+use self::windows::{WindowBase, PostAction, States};
+use self::windows::board::GameBoard;
+use self::windows::hud::HUDWindow;
+use self::windows::confirm::{ConfirmationWindow, UserChoice};
+use self::windows::info::InfoWindow;
 
 pub use super::structs::{GraphicsWindow, CellProp};
 
