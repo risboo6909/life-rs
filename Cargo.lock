@@ -1,12 +1,10 @@
 [root]
-name = "life-rs"
+name = "ui"
 version = "0.1.0"
 dependencies = [
- "find_folder 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "engine 0.1.0",
  "piston2d-opengl_graphics 0.36.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "piston_window 0.60.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "rand 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)",
- "time 0.1.36 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -168,6 +166,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "winapi 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi-build 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "engine"
+version = "0.1.0"
+dependencies = [
+ "piston_window 0.60.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rand 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)",
+ "time 0.1.36 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -405,6 +412,19 @@ dependencies = [
  "lazy_static 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "target_build_utils 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "life-rs"
+version = "0.1.0"
+dependencies = [
+ "engine 0.1.0",
+ "find_folder 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "piston2d-opengl_graphics 0.36.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "piston_window 0.60.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rand 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)",
+ "time 0.1.36 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ui 0.1.0",
 ]
 
 [[package]]

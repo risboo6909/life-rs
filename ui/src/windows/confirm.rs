@@ -1,12 +1,13 @@
 // Simple confirmation window
+extern crate engine;
 
 use super::{WindowBase, InfoWindowTrait, PostAction, States};
 
 use piston_window::{Input, Button, Key, Context, Event};
 use opengl_graphics::GlGraphics;
 
-use super::super::super::engine::Engine;
-use super::super::super::Resources;
+use self::engine::engine::Engine;
+use super::Resources;
 
 use std::rc::Rc;
 use std::cell::{RefCell, Cell};

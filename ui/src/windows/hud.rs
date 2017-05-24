@@ -1,12 +1,13 @@
 // HUD window
 extern crate piston_window;
-
+extern crate engine;
 
 use piston_window::{Context, Transformed, text, Event};
 
 use super::{WindowBase, PostAction, States};
-use super::super::super::engine::Engine;
-use super::super::super::Resources;
+use super::Resources;
+
+use self::engine::engine::Engine;
 
 use opengl_graphics::GlGraphics;
 

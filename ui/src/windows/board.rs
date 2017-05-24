@@ -1,5 +1,5 @@
 extern crate piston_window;
-
+extern crate engine;
 
 use piston_window::{Context, Event, Input, Button, Key,
                     MouseButton, Motion, line, rectangle};
@@ -7,17 +7,16 @@ use piston_window::{Context, Event, Input, Button, Key,
 use super::{WindowBase, PostAction};
 use super::super::States;
 
-use super::super::super::engine::Engine;
-use super::super::super::structs::{CellProp, GraphicsWindow};
-pub use super::super::super::board::{Board, CellDesc};
+use self::engine::structs::{CellProp, GraphicsWindow};
+use self::engine::board::{Board, CellDesc};
+use self::engine::cam::Cam;
+use self::engine::engine::Engine;
 
 use opengl_graphics::GlGraphics;
 
 use std::rc::Rc;
 use std::cell::{RefCell, Cell};
 use std::time::{Instant, Duration};
-
-use cam::Cam;
 
 
 pub struct GameBoard<'a> {

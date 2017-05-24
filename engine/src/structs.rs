@@ -1,5 +1,7 @@
+extern crate piston_window;
+
 use ::cam::Cam;
-use piston_window::PistonWindow;
+use self::piston_window::PistonWindow;
 use std::cell::RefCell;
 use std::rc::Rc;
 
