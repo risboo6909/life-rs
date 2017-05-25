@@ -21,14 +21,14 @@ pub struct InfoWindow<'a> {
     scr_width: f64,
     scr_height: f64,
 
-    engine: Rc<RefCell<Engine<'a>>>,
+    _engine: Rc<RefCell<Engine<'a>>>,
     resources: Rc<RefCell<Resources>>,
 
 }
 
 impl<'a> InfoWindow<'a> {
 
-    pub fn new(resources: Rc<RefCell<Resources>>, engine: Rc<RefCell<Engine<'a>>>,
+    pub fn new(resources: Rc<RefCell<Resources>>, _engine: Rc<RefCell<Engine<'a>>>,
                msg: &'a str, width: f64, height: f64) -> Self {
 
         InfoWindow {
@@ -37,7 +37,7 @@ impl<'a> InfoWindow<'a> {
             scr_width: width,
             scr_height: height,
 
-            engine: engine,
+            _engine: _engine,
             resources: resources
 
         }
@@ -60,7 +60,7 @@ impl<'a> WindowBase for InfoWindow<'a> {
                                resources, self.msg, "press Enter to continue");
     }
 
-    fn event_dispatcher(&mut self, event: &Event, cur_state: &Cell<States>) -> PostAction {
+    fn event_dispatcher(&mut self, event: &Event, _cur_state: &Cell<States>) -> PostAction {
 
         match event {
 

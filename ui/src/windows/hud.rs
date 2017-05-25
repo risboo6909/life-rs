@@ -53,7 +53,7 @@ impl<'a> WindowBase for HUDWindow<'a> {
 
     }
 
-    fn event_dispatcher(&mut self, event: &Event, cur_state: &Cell<States>) -> PostAction {
+    fn event_dispatcher(&mut self, _event: &Event, _cur_state: &Cell<States>) -> PostAction {
 
         PostAction::Transfer
 

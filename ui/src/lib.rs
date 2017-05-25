@@ -10,7 +10,7 @@ use self::windows::hud::HUDWindow;
 use self::windows::confirm::{ConfirmationWindow, UserChoice};
 use self::windows::info::InfoWindow;
 
-use self::engine::structs::{GraphicsWindow, CellProp};
+use self::engine::structs::GraphicsWindow;
 use self::engine::engine::Engine;
 
 use opengl_graphics::GlGraphics;
@@ -229,7 +229,8 @@ impl<'a> UI<'a> {
 
 }
 
-pub fn new<'a>(window: Rc<GraphicsWindow>, engine: Rc<RefCell<Engine<'a>>>, resources: Rc<RefCell<Resources>>) -> UI<'a> {
+pub fn new<'a>(window: Rc<GraphicsWindow>, engine: Rc<RefCell<Engine<'a>>>,
+               resources: Rc<RefCell<Resources>>) -> UI<'a> {
 
     let mut ui = UI {
                       cur_state: Cell::new(States::Paused),

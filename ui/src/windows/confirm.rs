@@ -71,7 +71,7 @@ impl<'a, F> WindowBase for ConfirmationWindow<'a, F> where F: FnMut(Rc<RefCell<E
 
     }
 
-    fn event_dispatcher(&mut self, event: &Event, cur_state: &Cell<States>) -> PostAction {
+    fn event_dispatcher(&mut self, event: &Event, _cur_state: &Cell<States>) -> PostAction {
 
         match event {
 

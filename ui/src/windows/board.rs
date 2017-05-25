@@ -8,7 +8,7 @@ use super::{WindowBase, PostAction};
 use super::super::States;
 
 use self::engine::structs::{CellProp, GraphicsWindow};
-use self::engine::board::{Board, CellDesc};
+use self::engine::board::CellDesc;
 use self::engine::cam::Cam;
 use self::engine::engine::Engine;
 

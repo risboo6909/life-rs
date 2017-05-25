@@ -47,7 +47,8 @@ pub trait WindowBase {
 pub trait InfoWindowTrait: WindowBase {
 
     fn paint_info_window(&mut self, c: Context, g: &mut GlGraphics,
-                         scr_width: f64, scr_height: f64, resources: Rc<RefCell<Resources>>, msg: &str, prompt: &str) {
+                         scr_width: f64, scr_height: f64, resources: Rc<RefCell<Resources>>,
+                         msg: &str, prompt: &str) {
 
         let font_size = 15u32;
 
