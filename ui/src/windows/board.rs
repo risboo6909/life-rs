@@ -7,9 +7,10 @@ use piston_window::{Context, Event, Input, Button, Key,
 use super::{WindowBase, PostAction};
 use super::super::States;
 
-use self::engine::structs::{CellProp, GraphicsWindow};
+use super::super::{CellProp, GraphicsWindow};
+use super::Cam;
 use self::engine::board::CellDesc;
-use self::engine::cam::Cam;
+
 use self::engine::engine::Engine;
 
 use opengl_graphics::GlGraphics;

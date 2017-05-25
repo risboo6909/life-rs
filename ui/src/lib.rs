@@ -3,6 +3,9 @@ extern crate piston_window;
 extern crate engine;
 
 mod windows;
+mod cam;
+
+use cam::Cam;
 
 use self::windows::{WindowBase, PostAction, States};
 use self::windows::board::GameBoard;
@@ -10,7 +13,6 @@ use self::windows::hud::HUDWindow;
 use self::windows::confirm::{ConfirmationWindow, UserChoice};
 use self::windows::info::InfoWindow;
 
-use self::engine::structs::GraphicsWindow;
 use self::engine::engine::Engine;
 
 use opengl_graphics::GlGraphics;
@@ -19,7 +21,7 @@ use opengl_graphics::glyph_cache::GlyphCache;
 use std::rc::Rc;
 use std::cell::{RefCell, Cell};
 
-use piston_window::{OpenGL, Event, Input, Button, Key, Context, clear};
+use piston_window::{PistonWindow, OpenGL, Event, Input, Button, Key, Context, clear};
 
 pub const OPENGL: piston_window::OpenGL = OpenGL::V3_2;
 
@@ -38,6 +40,81 @@ pub struct UI<'a> {
 pub struct Resources {
     pub font: GlyphCache<'static>
 }
+
+pub struct GraphicsWindow {
+    window: Rc<RefCell<PistonWindow>>,
+
+    width: f64,
+    height: f64,
+}
+
+pub struct CellProp {
+    cell_width: f64,
+    cell_height: f64,
+}
+
+impl CellProp {
+    pub fn new(cell_width: f64, cell_height: f64) -> Self {
+        CellProp { cell_width: cell_width, cell_height: cell_height }
+    }
+
+    #[inline]
+    pub fn get_width(&self, cam: &Cam) -> f64 {
+        self.cell_width * cam.get_scale()
+    }
+
+    #[inline]
+    pub fn get_height(&self, cam: &Cam) -> f64 {
+        self.cell_height * cam.get_scale()
+    }
+
+    #[inline]
+    pub fn get_half_width(&self, cam: &Cam) -> f64 {
+        0.5 * self.get_width(&cam)
+    }
+
+    #[inline]
+    pub fn get_half_height(&self, cam: &Cam) -> f64 {
+        0.5 * self.get_height(&cam)
+    }
+}
+
+
+impl GraphicsWindow {
+
+    pub fn new(window_width: f64, window_height: f64, window: PistonWindow) -> Self {
+        GraphicsWindow { width: window_width,
+                         height: window_height,
+                         window: Rc::new(RefCell::new(window)) }
+    }
+
+    #[inline]
+    pub fn get_width(&self) -> f64 {
+        self.width
+    }
+
+    #[inline]
+    pub fn get_height(&self) -> f64 {
+        self.height
+    }
+
+    #[inline]
+    pub fn get_half_width(&self) -> f64 {
+        0.5 * self.get_width()
+    }
+
+    #[inline]
+    pub fn get_half_height(&self) -> f64 {
+        0.5 * self.get_height()
+    }
+
+    #[inline]
+    pub fn get_window(&self) -> &Rc<RefCell<PistonWindow>> {
+        &self.window
+    }
+
+}
+
 
 impl<'a> UI<'a> {
 

@@ -7,7 +7,7 @@ extern crate find_folder;
 extern crate engine;
 extern crate ui;
 
-use structs::GraphicsWindow;
+use ui::GraphicsWindow;
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -16,7 +16,6 @@ use piston_window::{PistonWindow, WindowSettings};
 
 use opengl_graphics::glyph_cache::GlyphCache;
 
-use engine::structs;
 use engine::engine::Engine;
 
 

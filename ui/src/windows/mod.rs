@@ -8,7 +8,9 @@ use std::cell::Cell;
 
 pub use piston_window::{Context, Event, Transformed, line, rectangle, text};
 use piston_window::character::CharacterCache;
+
 use super::Resources;
+use super::cam::Cam;
 
 use std::rc::Rc;
 use std::cell::RefCell;
