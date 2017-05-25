@@ -66,7 +66,7 @@ impl WindowBase for GameBoard {
             {
                 let engine = self.engine.borrow();
 
-                for CellDesc { coord, gen, is_alive, .. } in engine.get_board().into_iter() {
+                for CellDesc { coord, gen, is_alive, .. } in engine.get_board().iter() {
                     if is_alive {
                         let (x, y) = self.to_screen(coord.col, coord.row);
                         rectangle(GameBoard::get_color(gen), [x, y,

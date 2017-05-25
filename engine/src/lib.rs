@@ -1,5 +1,5 @@
 mod board;
 mod engine;
 
-pub use board::{Board, BoardIntoIterator, CellDesc};
+pub use board::{Board, BoardIterator, CellDesc};
 pub use engine::Engine;

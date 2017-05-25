@@ -70,7 +70,7 @@ impl Engine {
         let mut new_board = Self::new_board(board_type,
                                             self.board.get_cols(), self.board.get_rows());
 
-        for CellDesc { coord, gen, is_alive, .. } in self.board.into_iter() {
+        for CellDesc { coord, gen, is_alive, .. } in self.board.iter() {
             if is_alive {
                 new_board.born_at_gen(coord.col, coord.row, gen);
             }
@@ -136,7 +136,7 @@ impl Engine {
 
         let mut density_table: HashMap<isize, MinMax> = HashMap::new();
 
-        for CellDesc { coord, gen, is_alive, .. } in self.board.into_iter() {
+        for CellDesc { coord, gen, is_alive, .. } in self.board.iter() {
 
             let col = coord.col;
             let row = coord.row;

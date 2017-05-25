@@ -231,26 +231,21 @@ impl Board {
     pub fn get_population(&self) -> usize {
         self.population
     }
-}
 
-impl<'a> IntoIterator for &'a Board {
-    type Item = CellDesc;
-    type IntoIter = BoardIntoIterator<'a>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        BoardIntoIterator {
-            board: &self,
+    pub fn iter(&self) -> BoardIterator {
+        BoardIterator {
+            board: self,
             cell_iter: Box::new(self.cells.get_iter())
         }
     }
 }
 
-pub struct BoardIntoIterator<'a> {
+pub struct BoardIterator<'a> {
     board: &'a Board,
     cell_iter: Box<Iterator<Item=CellIterType> + 'a>
 }
 
-impl<'a> Iterator for BoardIntoIterator<'a> {
+impl<'a> Iterator for BoardIterator<'a> {
     type Item = CellDesc;
 
     fn next(&mut self) -> Option<CellDesc> {
