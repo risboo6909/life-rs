@@ -16,7 +16,7 @@ use piston_window::{PistonWindow, WindowSettings};
 
 use opengl_graphics::glyph_cache::GlyphCache;
 
-use engine::engine::Engine;
+use engine::Engine;
 
 
 struct Game<'a> {

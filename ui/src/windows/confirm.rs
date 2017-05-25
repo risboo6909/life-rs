@@ -6,7 +6,7 @@ use super::{WindowBase, InfoWindowTrait, PostAction, States};
 use piston_window::{Input, Button, Key, Context, Event};
 use opengl_graphics::GlGraphics;
 
-use self::engine::engine::Engine;
+use engine::Engine;
 use super::Resources;
 
 use std::rc::Rc;

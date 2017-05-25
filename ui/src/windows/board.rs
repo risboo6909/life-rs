@@ -9,9 +9,8 @@ use super::super::States;
 
 use super::super::{CellProp, GraphicsWindow};
 use super::Cam;
-use self::engine::board::CellDesc;
 
-use self::engine::engine::Engine;
+use engine::{Engine, CellDesc};
 
 use opengl_graphics::GlGraphics;
 
