@@ -13,7 +13,7 @@ use self::windows::hud::HUDWindow;
 use self::windows::confirm::{ConfirmationWindow, UserChoice};
 use self::windows::info::InfoWindow;
 
-use self::engine::engine::Engine;
+use engine::Engine;
 
 use opengl_graphics::GlGraphics;
 use opengl_graphics::glyph_cache::GlyphCache;

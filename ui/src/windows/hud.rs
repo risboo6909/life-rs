@@ -7,7 +7,7 @@ use piston_window::{Context, Transformed, text, Event};
 use super::{WindowBase, PostAction, States};
 use super::Resources;
 
-use self::engine::engine::Engine;
+use engine::Engine;
 
 use opengl_graphics::GlGraphics;
 
