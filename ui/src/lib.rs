@@ -31,7 +31,7 @@ pub struct UI<'a> {
     stack: Vec<Box<WindowBase + 'a>>,
 
     window: Rc<GraphicsWindow>,
-    engine: Rc<RefCell<Engine<'a>>>,
+    engine: Rc<RefCell<Engine>>,
     resources: Rc<RefCell<Resources>>,
 }
 
@@ -57,7 +57,7 @@ impl<'a> UI<'a> {
         self.window.clone()
     }
 
-    pub fn get_engine(&self) -> Rc<RefCell<Engine<'a>>> {
+    pub fn get_engine(&self) -> Rc<RefCell<Engine>> {
         self.engine.clone()
     }
 
@@ -66,7 +66,7 @@ impl<'a> UI<'a> {
     }
 
     fn create_prompt_window<F: 'a>(&mut self, msg: &'a str, callback: F)  where
-        F: FnMut(Rc<RefCell<Engine<'a>>>, UserChoice) {
+        F: FnMut(Rc<RefCell<Engine>>, UserChoice) {
 
         let confirm_window = Box::new(ConfirmationWindow::new(self.get_resources(), self.get_engine(),
                                          callback, msg,
@@ -229,7 +229,7 @@ impl<'a> UI<'a> {
 
 }
 
-pub fn new<'a>(window: Rc<GraphicsWindow>, engine: Rc<RefCell<Engine<'a>>>,
+pub fn new<'a>(window: Rc<GraphicsWindow>, engine: Rc<RefCell<Engine>>,
                resources: Rc<RefCell<Resources>>) -> UI<'a> {
 
     let mut ui = UI {

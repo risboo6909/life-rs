@@ -18,13 +18,13 @@ enum BoardType {
     SymVec
 }
 
-pub struct Engine<'a> {
+pub struct Engine {
     cols: Option<usize>,
     rows: Option<usize>,
 
     board_type: BoardType,
     iters_from_prev_switch: usize,
-    pub board: Board<'a>,
+    pub board: Board,
     pub iteration: usize,
     pub last_iter_time: f64,
 }
@@ -35,7 +35,7 @@ struct MinMax {
     max: Option<isize>
 }
 
-impl<'a> Engine<'a> {
+impl Engine {
 
     pub fn new(cols: Option<usize>, rows: Option<usize>) -> Self {
         let board_type = BoardType::Hashed;
@@ -57,7 +57,7 @@ impl<'a> Engine<'a> {
         self.last_iter_time = 0f64;
     }
 
-    fn new_board(board_type: BoardType, cols: Option<usize>, rows: Option<usize>) -> Board<'a> {
+    fn new_board(board_type: BoardType, cols: Option<usize>, rows: Option<usize>) -> Board {
         if board_type == BoardType::Hashed {
             Board::new(new_hashed(), cols, rows)
         }  else {
@@ -65,7 +65,7 @@ impl<'a> Engine<'a> {
         }
     }
 
-    fn clone_board(&self, board_type: BoardType) -> Board<'a> {
+    fn clone_board(&self, board_type: BoardType) -> Board {
 
         let mut new_board = Self::new_board(board_type,
                                             self.board.get_cols(), self.board.get_rows());
@@ -94,15 +94,15 @@ impl<'a> Engine<'a> {
         &self.board
     }
 
-    pub fn set_board(&mut self, board: Board<'a>) {
+    pub fn set_board(&mut self, board: Board) {
         self.board = board;
     }
 
-    pub fn get_board_mut(&mut self) -> &mut Board<'a> {
+    pub fn get_board_mut(&mut self) -> &mut Board {
         &mut self.board
     }
 
-    pub fn create_random(&self, p: f64) -> Board<'a> {
+    pub fn create_random(&self, p: f64) -> Board {
 
         let mut board = Self::new_board(self.board_type,
                                         self.board.get_cols(), self.board.get_rows());

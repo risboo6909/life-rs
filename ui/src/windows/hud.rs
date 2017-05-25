@@ -15,14 +15,14 @@ use std::rc::Rc;
 use std::cell::{RefCell, Cell};
 
 
-pub struct HUDWindow<'a> {
-    engine: Rc<RefCell<Engine<'a>>>,
+pub struct HUDWindow {
+    engine: Rc<RefCell<Engine>>,
     resources: Rc<RefCell<Resources>>
     //state: isize,
 }
 
-impl<'a> HUDWindow<'a> {
-    pub fn new(resources: Rc<RefCell<Resources>>, engine: Rc<RefCell<Engine<'a>>>) -> HUDWindow<'a> {
+impl HUDWindow {
+    pub fn new(resources: Rc<RefCell<Resources>>, engine: Rc<RefCell<Engine>>) -> HUDWindow {
 
         HUDWindow {
             resources: resources,
@@ -32,7 +32,7 @@ impl<'a> HUDWindow<'a> {
     }
 }
 
-impl<'a> WindowBase for HUDWindow<'a> {
+impl WindowBase for HUDWindow {
 
     fn paint(&mut self, c: Context, g: &mut GlGraphics) {
 

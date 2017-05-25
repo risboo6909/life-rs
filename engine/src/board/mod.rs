@@ -43,8 +43,8 @@ pub trait BoardInternal {
     fn get_iter<'a>(&'a self) -> Box<Iterator<Item=CellIterType> + 'a>;
 }
 
-pub struct Board<'a> {
-    cells: Box<BoardInternal + 'a>,
+pub struct Board {
+    cells: Box<BoardInternal>,
 
     population: usize,
 
@@ -77,9 +77,9 @@ fn bound_coordinate(left: isize, right: isize, coord: isize) -> isize {
     } else { coord }
 }
 
-impl<'a> Board<'a> {
+impl Board {
 
-    pub fn new(cells: Box<BoardInternal>, width: Option<usize>, height: Option<usize>) -> Board<'a> {
+    pub fn new(cells: Box<BoardInternal>, width: Option<usize>, height: Option<usize>) -> Board {
         Board {
 
             cells: cells,
@@ -233,7 +233,7 @@ impl<'a> Board<'a> {
     }
 }
 
-impl<'a> IntoIterator for &'a Board<'a> {
+impl<'a> IntoIterator for &'a Board {
     type Item = CellDesc;
     type IntoIter = BoardIntoIterator<'a>;
 
@@ -246,7 +246,7 @@ impl<'a> IntoIterator for &'a Board<'a> {
 }
 
 pub struct BoardIntoIterator<'a> {
-    board: &'a Board<'a>,
+    board: &'a Board,
     cell_iter: Box<Iterator<Item=CellIterType> + 'a>
 }
 
