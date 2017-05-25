@@ -20,10 +20,10 @@ use std::cell::{RefCell, Cell};
 use std::time::{Instant, Duration};
 
 
-pub struct GameBoard<'a> {
+pub struct GameBoard {
 
     window: Rc<GraphicsWindow>,
-    engine: Rc<RefCell<Engine<'a>>>,
+    engine: Rc<RefCell<Engine>>,
 
     cell: CellProp,
     cam: Cam,
@@ -36,9 +36,9 @@ pub struct GameBoard<'a> {
 
 }
 
-impl<'a> GameBoard<'a> {
+impl GameBoard {
 
-    pub fn new(window: Rc<GraphicsWindow>, engine: Rc<RefCell<Engine<'a>>>) -> GameBoard<'a> {
+    pub fn new(window: Rc<GraphicsWindow>, engine: Rc<RefCell<Engine>>) -> GameBoard {
 
         GameBoard {
             window: window,
@@ -59,7 +59,7 @@ impl<'a> GameBoard<'a> {
 
 }
 
-impl<'a> WindowBase for GameBoard<'a> {
+impl WindowBase for GameBoard {
 
     fn paint(&mut self, c: Context, g: &mut GlGraphics) {
 
@@ -226,7 +226,7 @@ impl<'a> WindowBase for GameBoard<'a> {
 
 }
 
-impl<'a> GameBoard<'a> {
+impl GameBoard {
 
     #[inline]
     fn get_right_border(&self) -> f64 {

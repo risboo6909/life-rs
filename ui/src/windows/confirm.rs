@@ -19,23 +19,23 @@ pub enum UserChoice {
 }
 
 pub struct ConfirmationWindow<'a, F>
-    where F: FnMut(Rc<RefCell<Engine<'a>>>, UserChoice) {
+    where F: FnMut(Rc<RefCell<Engine>>, UserChoice) {
 
     msg: &'a str,
 
     scr_width: f64,
     scr_height: f64,
 
-    engine: Rc<RefCell<Engine<'a>>>,
+    engine: Rc<RefCell<Engine>>,
     resources: Rc<RefCell<Resources>>,
 
     callback: F,
 }
 
 impl<'a, F> ConfirmationWindow<'a, F>
-    where F: FnMut(Rc<RefCell<Engine<'a>>>, UserChoice)  {
+    where F: FnMut(Rc<RefCell<Engine>>, UserChoice)  {
 
-    pub fn new(resources: Rc<RefCell<Resources>>, engine: Rc<RefCell<Engine<'a>>>,
+    pub fn new(resources: Rc<RefCell<Resources>>, engine: Rc<RefCell<Engine>>,
                callback: F, msg: &'a str, width: f64, height: f64) -> Self {
 
         ConfirmationWindow {
@@ -53,12 +53,12 @@ impl<'a, F> ConfirmationWindow<'a, F>
 
 }
 
-impl<'a, F> InfoWindowTrait for ConfirmationWindow<'a, F> where F: FnMut(Rc<RefCell<Engine<'a>>>,
+impl<'a, F> InfoWindowTrait for ConfirmationWindow<'a, F> where F: FnMut(Rc<RefCell<Engine>>,
     UserChoice) {
 
 }
 
-impl<'a, F> WindowBase for ConfirmationWindow<'a, F> where F: FnMut(Rc<RefCell<Engine<'a>>>,
+impl<'a, F> WindowBase for ConfirmationWindow<'a, F> where F: FnMut(Rc<RefCell<Engine>>,
     UserChoice) {
 
     fn paint(&mut self, c: Context, g: &mut GlGraphics) {

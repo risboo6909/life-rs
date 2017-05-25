@@ -21,14 +21,14 @@ pub struct InfoWindow<'a> {
     scr_width: f64,
     scr_height: f64,
 
-    _engine: Rc<RefCell<Engine<'a>>>,
+    _engine: Rc<RefCell<Engine>>,
     resources: Rc<RefCell<Resources>>,
 
 }
 
 impl<'a> InfoWindow<'a> {
 
-    pub fn new(resources: Rc<RefCell<Resources>>, _engine: Rc<RefCell<Engine<'a>>>,
+    pub fn new(resources: Rc<RefCell<Resources>>, _engine: Rc<RefCell<Engine>>,
                msg: &'a str, width: f64, height: f64) -> Self {
 
         InfoWindow {
