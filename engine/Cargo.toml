@@ -4,6 +4,5 @@ version = "0.1.0"
 authors = ["risboo6909 <risboo6909@yandex-team.ru>"]
 
 [dependencies]
-piston_window = "0.60.*"
 time = "0.1.*"
 rand = "0.3.*"
