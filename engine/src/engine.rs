@@ -1,10 +1,10 @@
 extern crate rand;
 extern crate time;
 
-use ::board::{Board, CellDesc};
-use ::board::hashed::new as new_hashed;
-use ::board::vect::new as new_vect;
+use board::{Board, CellDesc, HashedBoard, SymVecBoard};
+
 use self::rand::distributions::{IndependentSample, Range};
+
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 
@@ -59,9 +59,9 @@ impl Engine {
 
     fn new_board(board_type: BoardType, cols: Option<usize>, rows: Option<usize>) -> Board {
         if board_type == BoardType::Hashed {
-            Board::new(new_hashed(), cols, rows)
+            Board::new(HashedBoard::new(), cols, rows)
         }  else {
-            Board::new(new_vect(), cols, rows)
+            Board::new(SymVecBoard::new(), cols, rows)
         }
     }
 

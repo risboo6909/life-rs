@@ -62,6 +62,10 @@ impl BoardInternal for HashBased {
 
 }
 
-pub fn new() -> Box<BoardInternal> {
-    Box::new(HashBased{cells: HashMap::new()})
+impl HashBased {
+
+    pub fn new() -> Box<BoardInternal> {
+        Box::new(HashBased{cells: HashMap::new()})
+    }
+
 }

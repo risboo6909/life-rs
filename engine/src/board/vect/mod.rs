@@ -80,6 +80,7 @@ impl BoardInternal for SymVecBased {
     }
 
     fn ensure_cell(&mut self, col: isize, row: isize) {
+
         // extend board by any number of cells if needed
         // maintain them inside board limits
 
@@ -113,21 +114,25 @@ impl BoardInternal for SymVecBased {
     }
 }
 
-fn allocate(cols: usize, rows: usize) -> SymVec<SymVec<Cell>> {
+impl SymVecBased {
 
-    let mut tmp: SymVec<SymVec<Cell>> = SymVec::new();
-
-    for _ in 0..rows {
-        let mut col = SymVec::new();
-        for _ in 0..cols {
-            col.push_front(Cell::Empty);
-        }
-        tmp.push_front(col);
+    pub fn new() -> Box<BoardInternal> {
+        Box::new(SymVecBased{cells: Self::allocate(2, 2)})
     }
 
-    tmp
-}
+    fn allocate(cols: usize, rows: usize) -> SymVec<SymVec<Cell>> {
 
-pub fn new() -> Box<BoardInternal> {
-    Box::new(SymVecBased{cells: allocate(2, 2)})
+        let mut tmp: SymVec<SymVec<Cell>> = SymVec::new();
+
+        for _ in 0..rows {
+            let mut col = SymVec::new();
+            for _ in 0..cols {
+                col.push_front(Cell::Empty);
+            }
+            tmp.push_front(col);
+        }
+
+        tmp
+    }
+
 }
