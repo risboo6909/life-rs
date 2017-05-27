@@ -50,9 +50,8 @@ pub struct Board {
 
     population: usize,
 
-    rows: Option<usize>,
-    cols: Option<usize>,
-
+    rows: Option<u32>,
+    cols: Option<u32>,
 }
 
 #[inline]
@@ -81,7 +80,7 @@ fn bound_coordinate(left: isize, right: isize, coord: isize) -> isize {
 
 impl Board {
 
-    pub fn new(cells: Box<BoardInternal>, width: Option<usize>, height: Option<usize>) -> Board {
+    pub fn new(cells: Box<BoardInternal>, width: Option<u32>, height: Option<u32>) -> Board {
         Board {
 
             cells: cells,
@@ -101,8 +100,8 @@ impl Board {
         let mut new_col = col;
         let mut new_row = row;
 
-        let mut left: usize;
-        let mut right: usize;
+        let mut left: u32;
+        let mut right: u32;
 
         if let Some(cols) = self.cols {
             if cols % 2 == 0 {
@@ -220,12 +219,12 @@ impl Board {
     }
 
     #[inline]
-    pub fn get_cols(&self) -> Option<usize> {
+    pub fn get_cols(&self) -> Option<u32> {
         self.cols
     }
 
     #[inline]
-    pub fn get_rows(&self) -> Option<usize> {
+    pub fn get_rows(&self) -> Option<u32> {
         self.rows
     }
 

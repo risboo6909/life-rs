@@ -242,7 +242,7 @@ impl GameBoard {
         // get absolute screen coordinate of left border of a board
         let cols = match self.engine.borrow().get_board().get_cols() {
             Some(cols) => cols,
-            None => (self.window.get_width() / self.cell.get_width(&self.cam)) as usize
+            None => (self.window.get_width() / self.cell.get_width(&self.cam)) as u32
         };
         let x = self.cam.translate_x(self.window.get_half_width() -
             0.5 * cols as f64 * self.cell.get_width(&self.cam));
@@ -254,7 +254,7 @@ impl GameBoard {
         // get absolute screen coordinate of top border of a board
         let rows = match self.engine.borrow().get_board().get_rows() {
             Some(rows) => rows,
-            None => (self.window.get_height() / self.cell.get_height(&self.cam)) as usize
+            None => (self.window.get_height() / self.cell.get_height(&self.cam)) as u32
         };
         let y = self.cam.translate_y(self.window.get_half_height() -
             0.5 * rows as f64 * self.cell.get_height(&self.cam));

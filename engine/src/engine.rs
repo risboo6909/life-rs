@@ -19,8 +19,8 @@ enum BoardType {
 }
 
 pub struct Engine {
-    cols: Option<usize>,
-    rows: Option<usize>,
+    cols: Option<u32>,
+    rows: Option<u32>,
 
     board_type: BoardType,
     iters_from_prev_switch: usize,
@@ -37,7 +37,7 @@ struct MinMax {
 
 impl Engine {
 
-    pub fn new(cols: Option<usize>, rows: Option<usize>) -> Self {
+    pub fn new(cols: Option<u32>, rows: Option<u32>) -> Self {
         let board_type = BoardType::Hashed;
         Engine {
             cols: cols,
@@ -57,7 +57,7 @@ impl Engine {
         self.last_iter_time = 0f64;
     }
 
-    fn new_board(board_type: BoardType, cols: Option<usize>, rows: Option<usize>) -> Board {
+    fn new_board(board_type: BoardType, cols: Option<u32>, rows: Option<u32>) -> Board {
         if board_type == BoardType::Hashed {
             Board::new(HashedBoard::new(), cols, rows)
         }  else {
