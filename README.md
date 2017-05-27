@@ -22,6 +22,12 @@ Starts program with board of width 100 and height 100, if no width or height spe
 
 Starts program with initial board configuration from file `file_name`
 
+Type
+
+`./life-rs --help`
+
+for more information on command line parameters
+
 ## Controls
 
 | Key | Action |
