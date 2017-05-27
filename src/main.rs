@@ -8,7 +8,6 @@ extern crate find_folder;
 extern crate engine;
 extern crate ui;
 
-use ui::GraphicsWindow;
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -16,8 +15,6 @@ use find_folder::Search;
 use piston_window::{PistonWindow, WindowSettings};
 
 use opengl_graphics::glyph_cache::GlyphCache;
-
-use engine::Engine;
 
 use clap::{App, Arg};
 
@@ -41,8 +38,8 @@ impl<'a> Game<'a> {
             .unwrap();
 
         Game {
-            ui_manager: ui::new(Rc::new(GraphicsWindow::new(screen_width, screen_height, window)),
-                                Rc::new(RefCell::new(Engine::new(board_cols, board_rows))),
+            ui_manager: ui::new(Rc::new(ui::GraphicsWindow::new(screen_width, screen_height, window)),
+                                Rc::new(RefCell::new(engine::Engine::new(board_cols, board_rows))),
                                 Rc::new(RefCell::new(ui::Resources {
                                     font: GlyphCache::new(Search::ParentsThenKids(3, 3).
                                     for_folder("assets").unwrap().
