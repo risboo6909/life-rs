@@ -12,6 +12,7 @@ pub struct Cam {
 
 
 impl Cam {
+
     pub fn new(x: f64, y: f64) -> Self {
         Cam {
             x: x, y: y, scale: 1.0,

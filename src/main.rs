@@ -1,6 +1,7 @@
 /// The Game of Life is my first experimental Rust project
 /// to learn base features of the language.
 
+#[macro_use]
 extern crate clap;
 extern crate piston_window;
 extern crate opengl_graphics;
@@ -75,19 +76,22 @@ fn main() {
              .long("width")
              .help("Sets game window width, default is 1024")
              .value_name("WIDTH")
+             .default_value("1024")
              .takes_value(true))
         .arg(Arg::with_name("height")
-             .long("height")
-             .help("Sets game window height, default is 768")
-             .value_name("HEIGHT")
-             .takes_value(true))
+            .long("height")
+            .help("Sets game window height, default is 768")
+            .value_name("HEIGHT")
+            .default_value("768")
+            .takes_value(true))
 
         .get_matches();
 
     let board_cols = matches.value_of("cols").map_or(None, |n| Some(n.parse::<u32>().unwrap()));
     let board_rows = matches.value_of("rows").map_or(None, |n| Some(n.parse::<u32>().unwrap()));
-    let scr_width = matches.value_of("width").map_or(1024.0, |n| n.parse::<f64>().unwrap());
-    let scr_height = matches.value_of("height").map_or(768.0, |n| n.parse::<f64>().unwrap());
+
+    let scr_width = value_t_or_exit!(matches, "width", f64);
+    let scr_height = value_t_or_exit!(matches, "height", f64);
 
     let mut game = Game::new(scr_width, scr_height, board_cols, board_rows);
 
