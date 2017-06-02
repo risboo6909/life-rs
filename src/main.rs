@@ -27,7 +27,7 @@ struct Game<'a> {
 impl<'a> Game<'a> {
 
     fn new(screen_width: f64, screen_height: f64,
-           board_cols: Option<u32>, board_rows: Option<u32>) -> Game<'a> {
+           board_cols: Option<usize>, board_rows: Option<usize>) -> Game<'a> {
 
         let window: PistonWindow = WindowSettings::new(
             "Conway's Game of Life",
@@ -87,8 +87,8 @@ fn main() {
 
         .get_matches();
 
-    let board_cols = matches.value_of("cols").map_or(None, |n| Some(n.parse::<u32>().unwrap()));
-    let board_rows = matches.value_of("rows").map_or(None, |n| Some(n.parse::<u32>().unwrap()));
+    let board_cols = matches.value_of("cols").map_or(None, |n| Some(n.parse::<usize>().unwrap()));
+    let board_rows = matches.value_of("rows").map_or(None, |n| Some(n.parse::<usize>().unwrap()));
 
     let scr_width = value_t_or_exit!(matches, "width", f64);
     let scr_height = value_t_or_exit!(matches, "height", f64);

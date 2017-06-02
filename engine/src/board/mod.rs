@@ -48,10 +48,10 @@ pub trait BoardInternal {
 pub struct Board {
     cells: Box<BoardInternal>,
 
-    population: usize,
+    population: u64,
 
-    rows: Option<u32>,
-    cols: Option<u32>,
+    rows: Option<usize>,
+    cols: Option<usize>,
 }
 
 #[inline]
@@ -80,7 +80,7 @@ fn bound_coordinate(left: isize, right: isize, coord: isize) -> isize {
 
 impl Board {
 
-    pub fn new(cells: Box<BoardInternal>, width: Option<u32>, height: Option<u32>) -> Board {
+    pub fn new(cells: Box<BoardInternal>, width: Option<usize>, height: Option<usize>) -> Board {
         Board {
 
             cells: cells,
@@ -100,8 +100,8 @@ impl Board {
         let mut new_col = col;
         let mut new_row = row;
 
-        let mut left: u32;
-        let mut right: u32;
+        let mut left: usize;
+        let mut right: usize;
 
         if let Some(cols) = self.cols {
             if cols % 2 == 0 {
@@ -219,17 +219,17 @@ impl Board {
     }
 
     #[inline]
-    pub fn get_cols(&self) -> Option<u32> {
+    pub fn get_cols(&self) -> Option<usize> {
         self.cols
     }
 
     #[inline]
-    pub fn get_rows(&self) -> Option<u32> {
+    pub fn get_rows(&self) -> Option<usize> {
         self.rows
     }
 
     #[inline]
-    pub fn get_population(&self) -> usize {
+    pub fn get_population(&self) -> u64 {
         self.population
     }
 

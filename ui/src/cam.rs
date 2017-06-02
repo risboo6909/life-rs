@@ -74,6 +74,20 @@ impl Cam {
         self.scale += self.get_zoom_step();
     }
 
+    pub fn set_scale(&mut self, scale: f64) {
+        self.scale = scale;
+    }
+
+    pub fn set_pos(&mut self, x: f64, y: f64) {
+        self.x = x;
+        self.y = y;
+    }
+
+    pub fn set_pos_delta(&mut self, delta_x: f64, delta_y: f64) {
+        self.x += delta_x;
+        self.y += delta_y;
+    }
+
     pub fn move_right(&mut self) {
         self.x -= self.get_move_step();
         self.move_step *= self.move_acc;

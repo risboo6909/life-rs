@@ -54,6 +54,7 @@ pub struct CellProp {
 }
 
 impl CellProp {
+
     pub fn new(cell_width: f64, cell_height: f64) -> Self {
         CellProp { cell_width: cell_width, cell_height: cell_height }
     }
@@ -77,6 +78,7 @@ impl CellProp {
     pub fn get_half_height(&self, cam: &Cam) -> f64 {
         0.5 * self.get_height(&cam)
     }
+    
 }
 
 
@@ -264,8 +266,7 @@ impl<'a> UI<'a> {
                                                         let board = engine.borrow().create_random(0.3);
                                                         engine.borrow_mut().set_board(board);
                                                     }
-                                                }
-                                            );
+                                                });
                                         }
 
                                     }
