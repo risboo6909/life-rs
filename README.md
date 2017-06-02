@@ -14,13 +14,19 @@ Eaxmples:
 
 Starts program with infinite board.
 
-`./life-rs --width=100 --height=100` 
+`./life-rs --cols=100 --rows=100` 
 
 Starts program with board of width 100 and height 100, if no width or height specified the board will be infinite in that dimension.
 
 `./life-rs --file file_name`
 
 Starts program with initial board configuration from file `file_name`
+
+Type
+
+`./life-rs --help`
+
+for more information on command line parameters
 
 ## Controls
 
