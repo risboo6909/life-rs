@@ -9,6 +9,7 @@ extern crate find_folder;
 extern crate engine;
 extern crate ui;
 
+use std::fs::File;
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -56,6 +57,17 @@ impl<'a> Game<'a> {
 
 }
 
+fn load_from_file(file_name: Option<String>) {
+    // accepted file format described here:
+    // http://www.conwaylife.com/w/index.php?title=Run_Length_Encoded
+
+    match(file_name) {
+        Some(file_name) => {
+            let f = File::open(file_name).expect("File not found!");
+        },
+        None => {}
+    }
+}
 
 fn main() {
 
@@ -84,14 +96,22 @@ fn main() {
             .value_name("HEIGHT")
             .default_value("768")
             .takes_value(true))
+        .arg(Arg::with_name("file")
+            .long("file")
+            .help("Read configuration from a file")
+            .value_name("FILE")
+            .takes_value(true))
 
         .get_matches();
 
-    let board_cols = matches.value_of("cols").map_or(None, |n| Some(n.parse::<usize>().unwrap()));
-    let board_rows = matches.value_of("rows").map_or(None, |n| Some(n.parse::<usize>().unwrap()));
+    let board_cols = value_t!(matches, "cols", usize).ok();
+    let board_rows = value_t!(matches, "rows", usize).ok();
 
     let scr_width = value_t_or_exit!(matches, "width", f64);
     let scr_height = value_t_or_exit!(matches, "height", f64);
+
+    let file_name = value_t!(matches, "file", String).ok();
+    load_from_file(file_name);
 
     let mut game = Game::new(scr_width, scr_height, board_cols, board_rows);
 
