@@ -62,6 +62,7 @@ impl GameBoard {
         // fit game board on a screen
 
         if let Some(board_cols) = self.engine.borrow().get_board().get_cols() {
+
             if let Some(board_rows) = self.engine.borrow().get_board().get_rows() {
 
                 // try to make all borders to be visible if possible
@@ -70,8 +71,9 @@ impl GameBoard {
                 let target_area = 0.55 * self.window.get_width() * self.window.get_height();
 
                 // the derivation is as follows:
+
                 // rows*cols*s*k*w*s*k*h = 0.55*width*height
-                // k^2 = (0.55*width*height) / (rows*cols*s^2*w*h)
+                // k = sqrt[(0.55*width*height) / (rows*cols*s^2*w*h)]
 
                 let cell_area = self.cell.get_width(&self.cam) * self.cell.get_height(&self.cam);
                 let current_area = cell_area * (board_cols * board_rows) as f64;
@@ -82,6 +84,7 @@ impl GameBoard {
                 self.cam.set_scale((scale_factor * scale_coeff));
 
             }
+
         }
 
         // position camera to look at the center of a board
