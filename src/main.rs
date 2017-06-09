@@ -9,7 +9,6 @@ extern crate find_folder;
 extern crate engine;
 extern crate ui;
 
-use std::fs::File;
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -19,6 +18,8 @@ use piston_window::{PistonWindow, WindowSettings};
 use opengl_graphics::glyph_cache::GlyphCache;
 
 use clap::{App, Arg};
+
+mod loader;
 
 
 struct Game<'a> {
@@ -55,18 +56,6 @@ impl<'a> Game<'a> {
         self.ui_manager.event_dispatcher();
     }
 
-}
-
-fn load_from_file(file_name: Option<String>) {
-    // accepted file format described here:
-    // http://www.conwaylife.com/w/index.php?title=Run_Length_Encoded
-
-    match(file_name) {
-        Some(file_name) => {
-            let f = File::open(file_name).expect("File not found!");
-        },
-        None => {}
-    }
 }
 
 fn main() {
@@ -111,7 +100,7 @@ fn main() {
     let scr_height = value_t_or_exit!(matches, "height", f64);
 
     let file_name = value_t!(matches, "file", String).ok();
-    load_from_file(file_name);
+    loader::from_file(file_name);
 
     let mut game = Game::new(scr_width, scr_height, board_cols, board_rows);
 
