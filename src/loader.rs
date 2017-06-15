@@ -4,6 +4,7 @@ use std::fs::File;
 use std::io;
 use std::io::{BufRead, BufReader, Error};
 use std::iter::{FromIterator, Peekable};
+use engine::Coord;
 
 
 #[derive(Debug, PartialEq)]
@@ -91,15 +92,67 @@ fn contains(c: char, arr: &[char]) -> bool {
     arr.iter().position(|&x| c == x).is_some()
 }
 
+fn filter_line<'a>(line: &'a str) -> Box<Iterator<Item=char> + 'a> {
+    // filter redundant chars
+    Box::new(line.chars().filter(|&c| !contains(c, &CHARS_TO_FILTER[..])))
+}
+
+fn rle_parser(line: &str) {
+
+    let mut board_config: Vec<Coord> = Vec::new();
+    let mut prefix: Vec<char> = Vec::new();
+
+    let mut col = 0;
+    let mut row = 0;
+
+    let mut it = filter_line(line).peekable();
+
+    while let Some(c) = it.next() {
+
+        match(c) {
+
+            t @ 'b' | t @ 'o' => {
+
+                // b - dead cell
+                // o - alive cell
+
+                let mut repeat = 1;
+
+                if !prefix.is_empty() {
+                    repeat = match get_num(&mut prefix.iter().cloned().peekable()) {
+                        Ok(n) => n,
+                        Err(_) => 1,
+                    };
+                }
+
+                if t == 'o' {
+                    for idx in 0..repeat {
+                        board_config.push(Coord { col: col, row: row });
+                        col += 1;
+                    }
+                }
+
+                prefix.clear();
+            },
+
+            '$' => row += 1,
+
+            _ => {},
+
+        }
+
+    }
+
+    println!("board = {:?}", board_config);
+
+}
+
 fn lexer(line: &str) -> Result<Vec<Lexem>, ParseError> {
 
     let mut result: Vec<Lexem> = Vec::new();
-
-    // filter redundant chars
-    let mut it = line.chars().filter(|&c|
-        !contains(c, &CHARS_TO_FILTER[..])).peekable();
-
     let mut prefix: Vec<char> = Vec::new();
+
+    let mut it = filter_line(line).peekable();
 
     while let Some(c) = it.next() {
 
@@ -139,22 +192,7 @@ fn lexer(line: &str) -> Result<Vec<Lexem>, ParseError> {
             ',' => {
                 result.push(Lexem::Comma);
                 prefix.clear();
-            }
-
-            'b' | 'o' => {
-                if !prefix.is_empty() {
-                    let repeat = match get_num(&mut prefix.iter().cloned().peekable()) {
-                        Ok(n) => n,
-                        Err(_) => 1,
-                    };
-
-                }
-                prefix.clear();
-            }
-
-            '!' | '$' => {
-                //it.next();
-            }
+            },
 
             _ => { }
 
@@ -165,6 +203,7 @@ fn lexer(line: &str) -> Result<Vec<Lexem>, ParseError> {
     Ok(result)
 
 }
+
 
 pub fn from_file(file_name: Option<String>) -> Result<Vec<(isize, isize)>, io::Error> {
 
@@ -190,6 +229,11 @@ pub fn from_file(file_name: Option<String>) -> Result<Vec<(isize, isize)>, io::E
         },
         None => Ok(Vec::new())
     }
+
+}
+
+pub fn from_clipboard() {
+    // TODO: implement reading initial config from clipboard
 
 }
 

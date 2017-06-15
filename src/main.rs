@@ -42,7 +42,7 @@ impl<'a> Game<'a> {
 
         Game {
             ui_manager: ui::new(Rc::new(ui::GraphicsWindow::new(screen_width, screen_height, window)),
-                                Rc::new(RefCell::new(engine::Engine::new(board_cols, board_rows))),
+                                Rc::new(RefCell::new(engine::Engine::new(None, board_cols, board_rows))),
                                 Rc::new(RefCell::new(ui::Resources {
                                     font: GlyphCache::new(Search::ParentsThenKids(3, 3).
                                     for_folder("assets").unwrap().

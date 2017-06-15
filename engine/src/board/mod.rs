@@ -92,6 +92,12 @@ impl Board {
         }
     }
 
+    pub fn set_predefined(&mut self, config_vec: Vec<Coord>) {
+        for Coord{col: col, row: row} in config_vec {
+            self.born_at(col, row);
+        }
+    }
+
     #[inline]
     fn constrain_board(&self, col: isize, row: isize) -> (isize, isize) {
 

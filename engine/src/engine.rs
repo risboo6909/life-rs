@@ -1,7 +1,7 @@
 extern crate rand;
 extern crate time;
 
-use board::{Board, CellDesc, HashedBoard, SymVecBoard};
+use board::{Board, CellDesc, HashedBoard, SymVecBoard, Coord};
 
 use self::rand::distributions::{IndependentSample, Range};
 
@@ -29,17 +29,18 @@ pub struct Engine {
     pub last_iter_time: f64,
 }
 
-
 struct MinMax {
     min: Option<isize>,
     max: Option<isize>
 }
 
+
 impl Engine {
 
-    pub fn new(cols: Option<usize>, rows: Option<usize>) -> Self {
+    pub fn new(config_vec: Option<Vec<Coord>>, cols: Option<usize>, rows: Option<usize>) -> Self {
         let board_type = BoardType::Hashed;
-        Engine {
+
+        let mut engine = Engine {
             cols: cols,
             rows: rows,
 
@@ -48,7 +49,17 @@ impl Engine {
             board: Self::new_board(board_type, cols, rows),
             iteration: 0,
             last_iter_time: 0f64
-        }
+        };
+
+        if let Some(board_config) = config_vec {
+            engine.board.set_predefined(board_config);
+        };
+
+        engine
+    }
+
+    pub fn set_predefined(&mut self, board_config: Vec<Coord>) {
+        self.board.set_predefined(board_config);
     }
 
     pub fn reset(&mut self) {
@@ -79,8 +90,6 @@ impl Engine {
         new_board
 
     }
-
-    pub fn from_file() {}
 
     pub fn cur_iteration(&self) -> usize {
         self.iteration
