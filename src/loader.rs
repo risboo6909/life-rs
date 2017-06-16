@@ -4,6 +4,7 @@ use std::fs::File;
 use std::io;
 use std::io::{BufRead, BufReader, Error};
 use std::iter::{FromIterator, Peekable};
+use std::cell::RefCell;
 use engine::Coord;
 
 
@@ -22,6 +23,64 @@ enum ParseError {
     InputExhausted,
     EmptyName,
     WrongName(String),
+}
+
+trait InputProviderTrait {
+    fn read_line(&self) -> Option<String>;
+}
+
+struct FileInputProvider {
+    buf_reader: RefCell<BufReader<File>>,
+}
+
+impl InputProviderTrait for FileInputProvider {
+
+    fn read_line(&self) -> Option<String> {
+
+        let mut line = String::new();
+
+        match self.buf_reader.borrow_mut().read_line(&mut line) {
+            Ok(_) => Some(line),
+            Err(_) => None
+        }
+
+    }
+
+}
+
+impl FileInputProvider {
+
+    pub fn new(file_name: String) -> Self {
+        let f = File::open(file_name).expect("file not found!");
+        Self { buf_reader: RefCell::new(BufReader::new(f)) }
+    }
+
+}
+
+struct IterHelper<'a, T: 'a> {
+    obj: &'a T,
+}
+
+impl<'a, T: 'a> Iterator for IterHelper<'a, T>
+    where T: InputProviderTrait {
+
+    type Item=String;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.obj.read_line()
+    }
+
+}
+
+impl<'a> IntoIterator for &'a FileInputProvider {
+
+    type Item = String;
+    type IntoIter = IterHelper<'a, FileInputProvider>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        IterHelper{obj: self}
+    }
+
 }
 
 
@@ -156,11 +215,6 @@ fn lexer(line: &str) -> Result<Vec<Lexem>, ParseError> {
 
     while let Some(c) = it.next() {
 
-        // skip comments
-        if c == '#' {
-            break;
-        }
-
         prefix.push(c);
 
         match(c) {
@@ -204,7 +258,6 @@ fn lexer(line: &str) -> Result<Vec<Lexem>, ParseError> {
 
 }
 
-
 pub fn from_file(file_name: Option<String>) -> Result<Vec<(isize, isize)>, io::Error> {
 
     // accepted file format described here:
@@ -215,17 +268,29 @@ pub fn from_file(file_name: Option<String>) -> Result<Vec<(isize, isize)>, io::E
 
         Some(file_name) => {
 
-            let f = File::open(file_name).expect("file not found!");
+            let input = FileInputProvider::new(file_name);
 
-            let mut buf_reader = BufReader::new(f);
-            let mut line = String::new();
+            for line in &input {
 
-            while buf_reader.read_line(&mut line).unwrap() > 0 {
-                lexer(&line[..]);
-                line.clear();
+                if line.starts_with('#') {
+                    // skip comments
+                    continue;
+
+                } else {
+                    // read header data
+                    lexer(&line[..]);
+                    break;
+                }
+
+            }
+
+            for line in &input {
+            // read RLE-encoded data
+
             }
 
             Ok(cells_data)
+
         },
         None => Ok(Vec::new())
     }
