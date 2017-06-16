@@ -82,13 +82,11 @@ impl Board {
 
     pub fn new(cells: Box<BoardInternal>, width: Option<usize>, height: Option<usize>) -> Board {
         Board {
-
             cells: cells,
             population: 0,
 
             cols: width,
             rows: height,
-
         }
     }
 
