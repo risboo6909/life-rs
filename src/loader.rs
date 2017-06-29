@@ -160,7 +160,9 @@ fn filter_line<'a>(line: &'a str) -> Box<Iterator<Item=char> + 'a> {
     Box::new(line.chars().filter(|&c| !contains(c, &CHARS_TO_FILTER[..])))
 }
 
-fn rle_parser(line: &str) {
+fn rle_decoder(line: &str) {
+
+    println!("{}", line);
 
     let mut board_config: Vec<Coord> = Vec::new();
     let mut prefix: Vec<char> = Vec::new();
@@ -269,7 +271,6 @@ fn parse_stream<T>(data_provider: T) where for<'a> &'a T: IntoIterator<Item=Stri
         if line.starts_with('#') {
             // skip comments
             continue;
-
         } else {
             // read header data
             lexer(&line[..]);
@@ -279,8 +280,21 @@ fn parse_stream<T>(data_provider: T) where for<'a> &'a T: IntoIterator<Item=Stri
     }
 
     // parse RLE-encoded data
+    let mut rle_line = String::new();
+
     for line in &data_provider {
-        println!("{}", line);
+
+        let tmp = rle_line.clone();
+
+        for c in line.chars() {
+            if c != '$' && c != '!' {
+                rle_line.push(c);
+            } else {
+                rle_decoder(rle_line.as_str());
+                rle_line.clear();
+            }
+        }
+
     }
 
 }
