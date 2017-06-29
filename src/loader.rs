@@ -33,21 +33,6 @@ struct FileInputProvider {
     buf_reader: RefCell<BufReader<File>>,
 }
 
-impl InputProviderTrait for FileInputProvider {
-
-    fn read_line(&self) -> Option<String> {
-
-        let mut line = String::new();
-
-        match self.buf_reader.borrow_mut().read_line(&mut line) {
-            Ok(_) => Some(line),
-            Err(_) => None
-        }
-
-    }
-
-}
-
 impl FileInputProvider {
 
     pub fn new(file_name: String) -> Self {
@@ -83,6 +68,25 @@ impl<'a> IntoIterator for &'a FileInputProvider {
 
 }
 
+impl InputProviderTrait for FileInputProvider {
+
+    fn read_line(&self) -> Option<String> {
+
+        let mut line = String::new();
+
+        let num_bytes = self.buf_reader.
+                             borrow_mut().
+                             read_line(&mut line).
+                             expect("error reading stream");
+
+        match num_bytes {
+            0 => None,
+            _ => Some(line)
+        }
+
+    }
+
+}
 
 fn get_str<T>(it: &mut Peekable<T>) -> String
 
@@ -258,6 +262,29 @@ fn lexer(line: &str) -> Result<Vec<Lexem>, ParseError> {
 
 }
 
+fn parse_stream<T>(data_provider: T) where for<'a> &'a T: IntoIterator<Item=String> {
+
+    for line in &data_provider {
+
+        if line.starts_with('#') {
+            // skip comments
+            continue;
+
+        } else {
+            // read header data
+            lexer(&line[..]);
+            break;
+        }
+
+    }
+
+    // parse RLE-encoded data
+    for line in &data_provider {
+        println!("{}", line);
+    }
+
+}
+
 pub fn from_file(file_name: Option<String>) -> Result<Vec<(isize, isize)>, io::Error> {
 
     // accepted file format described here:
@@ -268,26 +295,8 @@ pub fn from_file(file_name: Option<String>) -> Result<Vec<(isize, isize)>, io::E
 
         Some(file_name) => {
 
-            let input = FileInputProvider::new(file_name);
-
-            for line in &input {
-
-                if line.starts_with('#') {
-                    // skip comments
-                    continue;
-
-                } else {
-                    // read header data
-                    lexer(&line[..]);
-                    break;
-                }
-
-            }
-
-            for line in &input {
-            // read RLE-encoded data
-
-            }
+            let data_provider = FileInputProvider::new(file_name);
+            parse_stream(data_provider);
 
             Ok(cells_data)
 
