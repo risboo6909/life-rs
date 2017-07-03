@@ -286,6 +286,7 @@ fn parse_stream<T>(data_provider: T) where for<'a> &'a T: IntoIterator<Item=Stri
 
         let tmp = rle_line.clone();
 
+        // read rle-encoded line until new line or eof symbol detected
         for c in line.chars() {
             if c != '$' && c != '!' {
                 rle_line.push(c);
