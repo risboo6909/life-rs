@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/risboo6909/life-rs.svg?branch=master)](https://travis-ci.org/risboo6909/life-rs)
+
 # life-rs
 
 Rust implementation of Conway's game of life using Piston library.
