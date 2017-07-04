@@ -5,6 +5,7 @@ use std::io;
 use std::io::{BufRead, BufReader, Error};
 use std::iter::{FromIterator, Peekable};
 use std::cell::RefCell;
+use std::str::Lines;
 use engine::Coord;
 
 
@@ -26,7 +27,7 @@ enum ParseError {
 }
 
 trait InputProviderTrait {
-    fn read_line(&self) -> Option<String>;
+    fn read_line(&mut self) -> Option<String>;
 }
 
 struct FileInputProvider {
@@ -43,7 +44,7 @@ impl FileInputProvider {
 }
 
 struct IterHelper<'a, T: 'a> {
-    obj: &'a T,
+    obj: &'a mut T,
 }
 
 impl<'a, T: 'a> Iterator for IterHelper<'a, T>
@@ -57,7 +58,7 @@ impl<'a, T: 'a> Iterator for IterHelper<'a, T>
 
 }
 
-impl<'a> IntoIterator for &'a FileInputProvider {
+impl<'a> IntoIterator for &'a mut FileInputProvider {
 
     type Item = String;
     type IntoIter = IterHelper<'a, FileInputProvider>;
@@ -70,7 +71,7 @@ impl<'a> IntoIterator for &'a FileInputProvider {
 
 impl InputProviderTrait for FileInputProvider {
 
-    fn read_line(&self) -> Option<String> {
+    fn read_line(&mut self) -> Option<String> {
 
         let mut line = String::new();
 
@@ -87,6 +88,24 @@ impl InputProviderTrait for FileInputProvider {
     }
 
 }
+
+struct StringDataProvider<'a> {
+    lines_iter: Lines<'a>,
+}
+
+impl<'a> StringDataProvider<'a> {
+    pub fn new(input_string: &'a String) -> Self {
+        let tmp = input_string.lines();
+        StringDataProvider{lines_iter: tmp}
+    }
+}
+
+impl<'a> InputProviderTrait for StringDataProvider<'a> {
+    fn read_line(&mut self) -> Option<String> {
+        self.lines_iter.next().map(|x| x.to_string())
+    }
+}
+
 
 fn get_str<T>(it: &mut Peekable<T>) -> String
 
@@ -160,19 +179,18 @@ fn filter_line<'a>(line: &'a str) -> Box<Iterator<Item=char> + 'a> {
     Box::new(line.chars().filter(|&c| !contains(c, &CHARS_TO_FILTER[..])))
 }
 
-fn rle_decoder(line: &str) {
+fn rle_decoder(line: &str, mut row: isize) -> Vec<Coord> {
 
-    println!("{}", line);
-
-    let mut board_config: Vec<Coord> = Vec::new();
+    let mut decoded: Vec<Coord> = Vec::new();
     let mut prefix: Vec<char> = Vec::new();
 
     let mut col = 0;
-    let mut row = 0;
 
     let mut it = filter_line(line).peekable();
 
     while let Some(c) = it.next() {
+
+        prefix.push(c);
 
         match(c) {
 
@@ -190,25 +208,25 @@ fn rle_decoder(line: &str) {
                     };
                 }
 
-                if t == 'o' {
-                    for idx in 0..repeat {
-                        board_config.push(Coord { col: col, row: row });
-                        col += 1;
+                for idx in 0..repeat {
+                    if t == 'o' {
+                        decoded.push(Coord { col: col, row: row });
                     }
+                    col += 1;
                 }
 
                 prefix.clear();
             },
 
-            '$' => row += 1,
-
-            _ => {},
+            _ => {
+                    // skip unknown characters
+                 },
 
         }
 
     }
 
-    println!("board = {:?}", board_config);
+    decoded
 
 }
 
@@ -264,9 +282,10 @@ fn lexer(line: &str) -> Result<Vec<Lexem>, ParseError> {
 
 }
 
-fn parse_stream<T>(data_provider: T) where for<'a> &'a T: IntoIterator<Item=String> {
+fn parse_stream<T>(mut data_provider: T) -> Vec<Coord>
+    where for<'a> &'a mut T: IntoIterator<Item=String> {
 
-    for line in &data_provider {
+    for line in &mut data_provider {
 
         if line.starts_with('#') {
             // skip comments
@@ -282,7 +301,12 @@ fn parse_stream<T>(data_provider: T) where for<'a> &'a T: IntoIterator<Item=Stri
     // parse RLE-encoded data
     let mut rle_line = String::new();
 
-    for line in &data_provider {
+    // vector of occupied cells
+    let mut coords: Vec<Coord> = Vec::new();
+
+    let mut row: isize = 0;
+
+    for line in &mut data_provider {
 
         let tmp = rle_line.clone();
 
@@ -291,27 +315,30 @@ fn parse_stream<T>(data_provider: T) where for<'a> &'a T: IntoIterator<Item=Stri
             if c != '$' && c != '!' {
                 rle_line.push(c);
             } else {
-                rle_decoder(rle_line.as_str());
+                let decoded = rle_decoder(rle_line.as_str(), row);
+                coords.extend(decoded);
+
                 rle_line.clear();
+                row += 1;
             }
         }
-
     }
+
+    coords
 
 }
 
-pub fn from_file(file_name: Option<String>) -> Result<Vec<(isize, isize)>, io::Error> {
+pub fn from_file(file_name: Option<String>) -> Result<Vec<Coord>, io::Error> {
 
     // accepted file format described here:
     // http://www.conwaylife.com/w/index.php?title=Run_Length_Encoded
-    let cells_data = Vec::new();
 
     match(file_name) {
 
         Some(file_name) => {
 
-            let data_provider = FileInputProvider::new(file_name);
-            parse_stream(data_provider);
+            let mut data_provider = FileInputProvider::new(file_name);
+            let cells_data = parse_stream(data_provider);
 
             Ok(cells_data)
 
@@ -321,9 +348,9 @@ pub fn from_file(file_name: Option<String>) -> Result<Vec<(isize, isize)>, io::E
 
 }
 
-pub fn from_clipboard() {
-    // TODO: implement reading initial config from clipboard
-
+pub fn from_string(input_string: String) -> Result<Vec<Coord>, io::Error> {
+    // TODO: implement reading initial config from string
+    Ok(Vec::new())
 }
 
 
