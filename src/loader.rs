@@ -5,7 +5,6 @@ use std::io;
 use std::io::{BufRead, BufReader, Error};
 use std::iter::{FromIterator, Peekable};
 use std::cell::RefCell;
-use std::str::Lines;
 use engine::Coord;
 
 
@@ -18,7 +17,7 @@ enum Lexem {
 }
 
 #[derive(Debug)]
-enum ParseError {
+pub enum ParseError {
     NotANumber(String),
     UnexpectedSymbol(String),
     InputExhausted,
@@ -89,21 +88,31 @@ impl InputProviderTrait for FileInputProvider {
 
 }
 
-struct StringDataProvider<'a> {
-    lines_iter: Lines<'a>,
+struct StringDataProvider {
+    lines: Vec<String>,
 }
 
-impl<'a> StringDataProvider<'a> {
-    pub fn new(input_string: &'a String) -> Self {
-        let tmp = input_string.lines();
-        StringDataProvider{lines_iter: tmp}
+impl StringDataProvider {
+    pub fn new(input_string: String) -> Self {
+        Self{ lines: input_string.lines().map(|x| x.to_string()).rev().collect::<Vec<String>>() }
     }
 }
 
-impl<'a> InputProviderTrait for StringDataProvider<'a> {
+impl InputProviderTrait for StringDataProvider {
     fn read_line(&mut self) -> Option<String> {
-        self.lines_iter.next().map(|x| x.to_string())
+        self.lines.pop()
     }
+}
+
+impl<'a> IntoIterator for &'a mut StringDataProvider {
+
+    type Item = String;
+    type IntoIter = IterHelper<'a, StringDataProvider>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        IterHelper{obj: self}
+    }
+
 }
 
 
@@ -282,8 +291,8 @@ fn lexer(line: &str) -> Result<Vec<Lexem>, ParseError> {
 
 }
 
-fn parse_stream<T>(mut data_provider: T) -> Vec<Coord>
-    where for<'a> &'a mut T: IntoIterator<Item=String> {
+fn parse_stream<T>(mut data_provider: T) -> Result<Vec<Coord>, ParseError>
+            where for<'a> &'a mut T: IntoIterator<Item=String> {
 
     for line in &mut data_provider {
 
@@ -292,7 +301,7 @@ fn parse_stream<T>(mut data_provider: T) -> Vec<Coord>
             continue;
         } else {
             // read header data
-            lexer(&line[..]);
+            lexer(&line[..])?;
             break;
         }
 
@@ -324,11 +333,11 @@ fn parse_stream<T>(mut data_provider: T) -> Vec<Coord>
         }
     }
 
-    coords
+    Ok(coords)
 
 }
 
-pub fn from_file(file_name: Option<String>) -> Result<Vec<Coord>, io::Error> {
+pub fn from_file(file_name: Option<String>) -> Result<Vec<Coord>, ParseError> {
 
     // accepted file format described here:
     // http://www.conwaylife.com/w/index.php?title=Run_Length_Encoded
@@ -338,7 +347,7 @@ pub fn from_file(file_name: Option<String>) -> Result<Vec<Coord>, io::Error> {
         Some(file_name) => {
 
             let mut data_provider = FileInputProvider::new(file_name);
-            let cells_data = parse_stream(data_provider);
+            let cells_data = parse_stream(data_provider)?;
 
             Ok(cells_data)
 
@@ -348,9 +357,12 @@ pub fn from_file(file_name: Option<String>) -> Result<Vec<Coord>, io::Error> {
 
 }
 
-pub fn from_string(input_string: String) -> Result<Vec<Coord>, io::Error> {
-    // TODO: implement reading initial config from string
-    Ok(Vec::new())
+pub fn from_string(input_string: String) -> Result<Vec<Coord>, ParseError> {
+
+    let mut data_provider = StringDataProvider::new(input_string);
+    let cells_data = parse_stream(data_provider)?;
+
+    Ok(cells_data)
 }
 
 
@@ -384,4 +396,9 @@ fn test_lexer_error2() {
 #[should_panic]
 fn test_lexer_error3() {
     lexer("=  25").unwrap();
+}
+
+#[test]
+fn test_parse_rle1() {
+    println!("{:?}", from_string(String::from("x =  3\ny = 0\nbo$2bo$3o!")).unwrap());
 }
