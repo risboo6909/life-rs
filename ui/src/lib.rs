@@ -226,11 +226,16 @@ impl<'a> UI<'a> {
                                 &Event::Input(Input::Press(Button::Keyboard(Key::X))) => {
                                     match self.clipboard_ctx.get_contents() {
                                         Ok(content) => {
-                                            load_from_string(content);
+                                            match load_from_string(content) {
+                                                Ok(parsed) => {
+                                                    // setup new board config here
+
+                                                }
+                                                Err(err) => { println!("{}", err) }
+                                            }
                                         },
                                         Err(_) => { /* ignore error */ }
                                     }
-                                    println!("Paste yoo!");
                                 }
 
                                 &Event::Input(Input::Press(Button::Keyboard(Key::C))) => {
