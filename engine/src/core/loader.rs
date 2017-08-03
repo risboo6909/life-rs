@@ -372,23 +372,15 @@ fn parse_stream<T>(mut data_provider: T) -> Result<Vec<Coord>, ParseError>
 
 }
 
-pub fn from_file(file_name: Option<String>) -> Result<Vec<Coord>, ParseError> {
+pub fn from_file(file_name: String) -> Result<Vec<Coord>, ParseError> {
 
     // accepted file format described here:
     // http://www.conwaylife.com/w/index.php?title=Run_Length_Encoded
 
-    match(file_name) {
+    let mut data_provider = FileInputProvider::new(file_name);
+    let cells_data = parse_stream(data_provider)?;
 
-        Some(file_name) => {
-
-            let mut data_provider = FileInputProvider::new(file_name);
-            let cells_data = parse_stream(data_provider)?;
-
-            Ok(cells_data)
-
-        },
-        None => Ok(Vec::new())
-    }
+    Ok(cells_data)
 
 }
 

@@ -19,6 +19,7 @@ use opengl_graphics::glyph_cache::GlyphCache;
 
 use clap::{App, Arg};
 use engine::loader::from_file as load_from_file;
+use engine::Coord;
 
 
 struct Game<'a> {
@@ -28,7 +29,7 @@ struct Game<'a> {
 impl<'a> Game<'a> {
 
     fn new(screen_width: f64, screen_height: f64,
-           board_cols: Option<usize>, board_rows: Option<usize>) -> Game<'a> {
+           board_cols: Option<usize>, board_rows: Option<usize>, initial_config: Option<Vec<Coord>>) -> Game<'a> {
 
         let window: PistonWindow = WindowSettings::new(
             "Conway's Game of Life",
@@ -39,7 +40,7 @@ impl<'a> Game<'a> {
             .build()
             .unwrap();
 
-        Game {
+        let mut tmp = Game {
             ui_manager: ui::new(Rc::new(ui::GraphicsWindow::new(screen_width, screen_height, window)),
                                 Rc::new(RefCell::new(engine::Engine::new(None, board_cols, board_rows))),
                                 Rc::new(RefCell::new(ui::Resources {
@@ -48,7 +49,18 @@ impl<'a> Game<'a> {
                                     join("Roboto-Regular.ttf")).unwrap()
                                 }))
             ),
+        };
+
+        match initial_config {
+            Some(parsed) => {
+                let mut engine_ref = tmp.ui_manager.get_engine();
+                let board = engine_ref.borrow().from_coord_vec(parsed.clone());
+                engine_ref.borrow_mut().set_board(board);
+            }
+            None => {}
         }
+
+        tmp
     }
 
     fn event_dispatcher(&mut self) {
@@ -99,9 +111,21 @@ fn main() {
     let scr_height = value_t_or_exit!(matches, "height", f64);
 
     let file_name = value_t!(matches, "file", String).ok();
-    load_from_file(file_name);
 
-    let mut game = Game::new(scr_width, scr_height, board_cols, board_rows);
+    let init_config = match file_name {
+        Some(file_name) => {
+            match load_from_file(file_name.clone()) {
+                Ok(parsed) => Some(parsed),
+                Err(err) => {
+                    println!("Couldn't parse file {}, reason {}", file_name, err);
+                    None
+                }
+            }
+        },
+        None => None
+    };
+
+    let mut game = Game::new(scr_width, scr_height, board_cols, board_rows, init_config);
 
     game.event_dispatcher();
 }

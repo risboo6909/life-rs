@@ -142,7 +142,7 @@ impl WindowBase for GameBoard {
 
                 if cur_state.get() == States::Working || cur_state.get() == States::StepByStep {
                     if !self.render ||
-                        Instant::now() - self.last_iter_time >= Duration::from_millis(3) ||
+                        Instant::now() - self.last_iter_time >= Duration::from_millis(2) ||
                         cur_state.get() == States::StepByStep {
 
                         self.engine.borrow_mut().iterations(1);
@@ -401,7 +401,7 @@ impl GameBoard {
         [r as f32, 1.0 - r as f32, 0.0, 0.5]
     }
 
-   fn draw_borders(&self, c: &Context, g: &mut GlGraphics) {
+    fn draw_borders(&self, c: &Context, g: &mut GlGraphics) {
 
         // draw borders
         let right_offset_x = self.get_right_border();
