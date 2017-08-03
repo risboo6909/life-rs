@@ -6,4 +6,5 @@ authors = ["risboo6909 <risboo6909@yandex-team.ru>"]
 [dependencies]
 piston_window = "0.60.*"
 piston2d-opengl_graphics = "0.36.*"
+clipboard = "0.4.*"
 engine = { path = "../engine" }
