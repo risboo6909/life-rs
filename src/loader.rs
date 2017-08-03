@@ -438,19 +438,25 @@ fn test_lexer_error3() {
 fn test_parse_rle1() {
     // glyder
     assert!(from_string(String::from("x =  3, y = 0\nbo$2b\no$3o!")).unwrap() ==
-    [Coord { col: 1, row: 0 }, Coord { col: 2, row: 1 }, Coord { col: 0, row: 2 }, Coord { col: 1, row: 2 }, Coord { col: 2, row: 2 }]);
+    [Coord { col: 1, row: 0 }, Coord { col: 2, row: 1 }, Coord { col: 0, row: 2 },
+     Coord { col: 1, row: 2 }, Coord { col: 2, row: 2 }]);
 }
 
 #[test]
 fn test_parse_rle2() {
     // Gosper glider gun
-    assert!(from_string(String::from("x= 20, y=100\n24bo$22bobo$12b2o6b2o12b2o$11bo3bo4b2o12b2o$2o8bo5bo3b2o$2o8bo3bob2o4bobo$10bo5bo7bo$11bo3bo$12b2o!")).unwrap() ==
-           &[Coord { col: 24, row: 0 }, Coord { col: 22, row: 1 }, Coord { col: 24, row: 1 }, Coord { col: 12, row: 2 }, Coord { col: 13, row: 2 },
-             Coord { col: 20, row: 2 }, Coord { col: 21, row: 2 }, Coord { col: 34, row: 2 }, Coord { col: 35, row: 2 }, Coord { col: 11, row: 3 },
-             Coord { col: 15, row: 3 }, Coord { col: 20, row: 3 }, Coord { col: 21, row: 3 }, Coord { col: 34, row: 3 }, Coord { col: 35, row: 3 },
-             Coord { col: 0, row: 4 }, Coord { col: 1, row: 4 }, Coord { col: 10, row: 4 }, Coord { col: 16, row: 4 }, Coord { col: 20, row: 4 },
-             Coord { col: 21, row: 4 }, Coord { col: 0, row: 5 }, Coord { col: 1, row: 5 }, Coord { col: 10, row: 5 }, Coord { col: 14, row: 5 },
-             Coord { col: 16, row: 5 }, Coord { col: 17, row: 5 }, Coord { col: 22, row: 5 }, Coord { col: 24, row: 5 }, Coord { col: 10, row: 6 },
-             Coord { col: 16, row: 6 }, Coord { col: 24, row: 6 }, Coord { col: 11, row: 7 }, Coord { col: 15, row: 7 }, Coord { col: 12, row: 8 },
-             Coord { col: 13, row: 8 }][..]);
+    assert!(from_string(String::from("x= 20, y=100\n24bo$22bobo$12b2o6b2o12b2o$11bo3bo4b2o12b2\
+    o$2o8bo5bo3b2o$2o8bo3bob2o4bobo$10bo5bo7bo$11bo3bo$12b2o!")).unwrap() ==
+           &[Coord { col: 24, row: 0 }, Coord { col: 22, row: 1 }, Coord { col: 24, row: 1 },
+             Coord { col: 12, row: 2 }, Coord { col: 13, row: 2 }, Coord { col: 20, row: 2 },
+             Coord { col: 21, row: 2 }, Coord { col: 34, row: 2 }, Coord { col: 35, row: 2 },
+             Coord { col: 11, row: 3 }, Coord { col: 15, row: 3 }, Coord { col: 20, row: 3 },
+             Coord { col: 21, row: 3 }, Coord { col: 34, row: 3 }, Coord { col: 35, row: 3 },
+             Coord { col: 0, row: 4 }, Coord { col: 1, row: 4 }, Coord { col: 10, row: 4 },
+             Coord { col: 16, row: 4 }, Coord { col: 20, row: 4 }, Coord { col: 21, row: 4 },
+             Coord { col: 0, row: 5 }, Coord { col: 1, row: 5 }, Coord { col: 10, row: 5 },
+             Coord { col: 14, row: 5 }, Coord { col: 16, row: 5 }, Coord { col: 17, row: 5 },
+             Coord { col: 22, row: 5 }, Coord { col: 24, row: 5 }, Coord { col: 10, row: 6 },
+             Coord { col: 16, row: 6 }, Coord { col: 24, row: 6 }, Coord { col: 11, row: 7 },
+             Coord { col: 15, row: 7 }, Coord { col: 12, row: 8 }, Coord { col: 13, row: 8 }][..]);
 }
