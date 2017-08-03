@@ -15,6 +15,7 @@ use self::windows::confirm::{ConfirmationWindow, UserChoice};
 use self::windows::info::InfoWindow;
 
 use engine::Engine;
+use engine::loader::from_string as load_from_string;
 
 use opengl_graphics::GlGraphics;
 use opengl_graphics::glyph_cache::GlyphCache;
@@ -224,7 +225,9 @@ impl<'a> UI<'a> {
 
                                 &Event::Input(Input::Press(Button::Keyboard(Key::X))) => {
                                     match self.clipboard_ctx.get_contents() {
-                                        Ok(content) => { println!("{}", content) },
+                                        Ok(content) => {
+                                            load_from_string(content);
+                                        },
                                         Err(_) => { /* ignore error */ }
                                     }
                                     println!("Paste yoo!");
