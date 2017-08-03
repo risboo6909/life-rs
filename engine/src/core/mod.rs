@@ -40,6 +40,7 @@ struct MinMax {
 impl Engine {
 
     pub fn new(config_vec: Option<Vec<Coord>>, cols: Option<usize>, rows: Option<usize>) -> Self {
+
         let board_type = BoardType::Hashed;
 
         let mut engine = Engine {
@@ -103,6 +104,17 @@ impl Engine {
 
     pub fn get_board(&self) -> &Board {
         &self.board
+    }
+
+    pub fn from_coord_vec(&self, coords: Vec<Coord>) -> Board {
+        let mut board = Self::new_board(self.board_type,
+                                        self.board.get_cols(), self.board.get_rows());
+
+        for Coord{col, row} in coords {
+            board.born_at(col, row);
+        }
+
+        board
     }
 
     pub fn set_board(&mut self, board: Board) {

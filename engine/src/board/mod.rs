@@ -14,7 +14,7 @@ mod hashed;
 pub use self::hashed::HashBased as HashedBoard;
 pub use self::vect::SymVecBased as SymVecBoard;
 
-#[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Clone)]
 pub struct Coord {
     pub col: isize,
     pub row: isize,

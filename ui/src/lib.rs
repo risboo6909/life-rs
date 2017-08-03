@@ -225,10 +225,32 @@ impl<'a> UI<'a> {
 
                                 &Event::Input(Input::Press(Button::Keyboard(Key::X))) => {
                                     match self.clipboard_ctx.get_contents() {
+
                                         Ok(content) => {
+
                                             match load_from_string(content) {
+
                                                 Ok(parsed) => {
                                                     // setup new board config here
+                                                    let engine = self.get_engine();
+
+                                                    if engine.borrow().get_board().is_infinite() {
+                                                        self.create_info_window("Can't generate random \
+                                                        configuration for infinite board");
+
+                                                    } else {
+
+                                                        self.create_prompt_window(
+                                                            "Current position will be lost, ok?",
+                                                            move |engine, user_choice| {
+                                                                if user_choice == UserChoice::Ok {
+                                                                    // generate random board
+                                                                    let board = engine.borrow().from_coord_vec(parsed.clone());
+                                                                    engine.borrow_mut().set_board(board);
+                                                                }
+                                                            }
+                                                        );
+                                                    }
 
                                                 }
                                                 Err(err) => { println!("{}", err) }
