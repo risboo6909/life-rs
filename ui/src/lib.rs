@@ -1,6 +1,7 @@
 extern crate opengl_graphics;
 extern crate piston_window;
 extern crate engine;
+extern crate clipboard;
 
 mod windows;
 mod cam;
@@ -23,6 +24,8 @@ use std::cell::{RefCell, Cell};
 
 use piston_window::{PistonWindow, OpenGL, Event, Input, Button, Key, Context, clear};
 
+use clipboard::{ClipboardContext, ClipboardProvider};
+
 pub const OPENGL: piston_window::OpenGL = OpenGL::V3_2;
 
 
@@ -35,6 +38,8 @@ pub struct UI<'a> {
     window: Rc<GraphicsWindow>,
     engine: Rc<RefCell<Engine>>,
     resources: Rc<RefCell<Resources>>,
+
+    clipboard_ctx: ClipboardContext
 }
 
 pub struct Resources {
@@ -217,6 +222,15 @@ impl<'a> UI<'a> {
 
                             match some_event {
 
+                                &Event::Input(Input::Press(Button::Keyboard(Key::X))) => {
+                                    match self.clipboard_ctx.get_contents() {
+                                        Ok(content) => { println!("{}", content) },
+                                        Err(_) => { // ignore error
+                                                  }
+                                    }
+                                    println!("Paste yoo!");
+                                }
+
                                 &Event::Input(Input::Press(Button::Keyboard(Key::C))) => {
 
                                     // clear board and reset counters
@@ -317,6 +331,7 @@ pub fn new<'a>(window: Rc<GraphicsWindow>, engine: Rc<RefCell<Engine>>,
                       window: window,
                       engine: engine,
                       resources: resources,
+                      clipboard_ctx: ClipboardProvider::new().unwrap()
                     };
 
     let board_window = Box::new(GameBoard::new(ui.get_window(),
