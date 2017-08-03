@@ -1,4 +1,3 @@
-extern crate engine;
 use std::fs::File;
 use std::io;
 use std::io::{BufRead, BufReader, Error};
@@ -8,7 +7,7 @@ use std::error;
 use std::fmt;
 use std::fmt::{Formatter, Display};
 
-use engine::Coord;
+use super::Coord;
 
 
 #[derive(Debug, PartialEq)]

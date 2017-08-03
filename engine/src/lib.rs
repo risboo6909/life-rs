@@ -1,5 +1,6 @@
 mod board;
-mod engine;
+mod core;
 
 pub use board::{Board, BoardIterator, CellDesc, Coord};
-pub use engine::Engine;
+pub use core::{Engine, loader};
+

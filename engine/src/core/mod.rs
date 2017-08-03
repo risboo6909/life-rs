@@ -11,6 +11,8 @@ use std::collections::hash_map::Entry;
 const SWITCH_BOARD_INERTIA: usize = 128;
 const ITERATIONS_TO_CLEANUP: usize = 1000;
 
+pub mod loader;
+
 
 #[derive(PartialEq, Copy, Clone)]
 enum BoardType {
@@ -154,7 +156,9 @@ impl Engine {
                 // for hashed board we maintain a hash table of
                 // min and max coordinates of each row of the board
                 match density_table.entry(row) {
+
                     Entry::Occupied(mut min_max_pair) => {
+
                         if col < min_max_pair.get().min.unwrap_or(isize::max_value()) {
                             let max = min_max_pair.get().max;
                             min_max_pair.insert(MinMax{min: Some(col), max: max});
@@ -162,7 +166,9 @@ impl Engine {
                             let min = min_max_pair.get().min;
                             min_max_pair.insert(MinMax{min: min, max: Some(col)});
                         }
+
                     },
+
                     Entry::Vacant(entry) => {
                         entry.insert(MinMax{min: None, max: None});
                     },

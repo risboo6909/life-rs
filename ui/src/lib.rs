@@ -225,8 +225,7 @@ impl<'a> UI<'a> {
                                 &Event::Input(Input::Press(Button::Keyboard(Key::X))) => {
                                     match self.clipboard_ctx.get_contents() {
                                         Ok(content) => { println!("{}", content) },
-                                        Err(_) => { // ignore error
-                                                  }
+                                        Err(_) => { /* ignore error */ }
                                     }
                                     println!("Paste yoo!");
                                 }

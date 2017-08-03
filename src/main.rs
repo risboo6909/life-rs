@@ -18,8 +18,7 @@ use piston_window::{PistonWindow, WindowSettings};
 use opengl_graphics::glyph_cache::GlyphCache;
 
 use clap::{App, Arg};
-
-mod loader;
+use engine::loader::from_file as load_from_file;
 
 
 struct Game<'a> {
@@ -100,7 +99,7 @@ fn main() {
     let scr_height = value_t_or_exit!(matches, "height", f64);
 
     let file_name = value_t!(matches, "file", String).ok();
-    loader::from_file(file_name);
+    load_from_file(file_name);
 
     let mut game = Game::new(scr_width, scr_height, board_cols, board_rows);
 
