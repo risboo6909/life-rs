@@ -2,14 +2,13 @@
 extern crate piston_window;
 extern crate engine;
 
-use piston_window::{Context, Transformed, text, Event};
+use piston_window::Event;
+use piston_window::graphics::{Context, Transformed, text};
 
-use super::{WindowBase, PostAction, States};
+use super::{WindowBase, PostAction, States, WgpuGraphics};
 use super::Resources;
 
 use engine::Engine;
-
-use opengl_graphics::GlGraphics;
 
 use std::rc::Rc;
 use std::cell::{RefCell, Cell};
@@ -34,7 +33,7 @@ impl HUDWindow {
 
 impl WindowBase for HUDWindow {
 
-    fn paint(&mut self, c: Context, g: &mut GlGraphics) {
+    fn paint(&mut self, c: Context, g: &mut WgpuGraphics) {
 
         text(super::GREEN, 15,
              &format!("generation {}", self.engine.borrow().cur_iteration()),

@@ -1,42 +1,66 @@
-[![Build Status](https://travis-ci.org/risboo6909/life-rs.svg?branch=master)](https://travis-ci.org/risboo6909/life-rs)
-
 # life-rs
 
-Rust implementation of Conway's game of life using Piston library.
+Conway's Game of Life implemented in Rust using Piston.
 
 ## Build
 
-Just run ```cargo build --release```
+```bash
+cargo build --release
+```
 
 ## Run
 
-Eaxmples:
+Run from the project root:
 
-`./life-rs`
+```bash
+cargo run -- [OPTIONS]
+```
 
-Starts program with infinite board.
+Examples:
 
-`./life-rs --cols=100 --rows=100` 
+```bash
+# Infinite board
+cargo run
 
-Starts program with board of width 100 and height 100, if no width or height specified the board will be infinite in that dimension.
+# Finite board: 100x100 cells
+cargo run -- --cols 100 --rows 100
 
-`./life-rs --file file_name`
+# Finite board with custom window size
+cargo run -- --cols 120 --rows 80 --width 1280 --height 720
 
-Starts program with initial board configuration from file `file_name`
+# Load initial pattern from file
+cargo run -- --file examples/glider.rle
+```
 
-Type
+Board size:
 
-`./life-rs --help`
+- `--cols <N>` sets board width in cells
+- `--rows <N>` sets board height in cells
+- if omitted, that dimension is infinite
 
-for more information on command line parameters
+Window size:
+
+- `--width <N>` window width in pixels (default `1024`)
+- `--height <N>` window height in pixels (default `768`)
 
 ## Controls
 
 | Key | Action |
 |-----|--------|
-| Left, Right, Up or Down arrow | Move camera |
-| Plus or Minus | Zoom in/out |
-| s or f | Slower or faster evolution |
-| p | Pause/Resume |
-| h | Display help |
-| ESC | Quit app |
+| `P` | Start/pause simulation |
+| `S` | Step simulation by one generation |
+| `R` | Generate random board (when paused) |
+| `C` | Clear board |
+| `X` | Paste pattern from clipboard (RLE/text parser input) |
+| `G` | Show/hide grid |
+| `F` | Fit board to screen |
+| `Arrow keys` | Move camera |
+| `+` / `-` | Zoom in/out |
+| `Mouse drag` | Draw/erase cells |
+| `Esc` | Quit |
+
+## Help
+
+```bash
+cargo run -- --help
+```

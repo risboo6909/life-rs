@@ -1,10 +1,10 @@
 // Simple confirmation window
 extern crate engine;
 
-use super::{WindowBase, InfoWindowTrait, PostAction, States};
+use super::{WindowBase, InfoWindowTrait, PostAction, States, WgpuGraphics};
 
-use piston_window::{Input, Button, Key, Context, Event};
-use opengl_graphics::GlGraphics;
+use piston_window::{Button, Key, Event, PressEvent};
+use piston_window::graphics::Context;
 
 use engine::Engine;
 use super::Resources;
@@ -61,7 +61,7 @@ impl<'a, F> InfoWindowTrait for ConfirmationWindow<'a, F> where F: FnMut(Rc<RefC
 impl<'a, F> WindowBase for ConfirmationWindow<'a, F> where F: FnMut(Rc<RefCell<Engine>>,
     UserChoice) {
 
-    fn paint(&mut self, c: Context, g: &mut GlGraphics) {
+    fn paint(&mut self, c: Context, g: &mut WgpuGraphics) {
 
         let (scr_width, scr_height) = (self.scr_width, self.scr_height);
         let resources = self.resources.clone();
@@ -72,23 +72,17 @@ impl<'a, F> WindowBase for ConfirmationWindow<'a, F> where F: FnMut(Rc<RefCell<E
     }
 
     fn event_dispatcher(&mut self, event: &Event, _cur_state: &Cell<States>) -> PostAction {
-
-        match event {
-
-             &Event::Input(Input::Press(Button::Keyboard(Key::Y))) => {
-                 (self.callback)(self.engine.clone(), UserChoice::Ok);
-                 PostAction::Pop
-             }
-
-             &Event::Input(Input::Press(Button::Keyboard(Key::N))) => {
-                 (self.callback)(self.engine.clone(), UserChoice::Cancel);
-                 PostAction::Pop
-             }
-
-            _ => PostAction::Stop
-
+        match event.press_args() {
+            Some(Button::Keyboard(Key::Y)) => {
+                (self.callback)(self.engine.clone(), UserChoice::Ok);
+                PostAction::Pop
+            }
+            Some(Button::Keyboard(Key::N)) => {
+                (self.callback)(self.engine.clone(), UserChoice::Cancel);
+                PostAction::Pop
+            }
+            _ => PostAction::Stop,
         }
-
     }
 
     fn is_modal(&self) -> bool {

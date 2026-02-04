@@ -3,11 +3,12 @@ pub mod board;
 pub mod hud;
 pub mod info;
 
-use opengl_graphics::GlGraphics;
 use std::cell::Cell;
 
-pub use piston_window::{Context, Event, Transformed, line, rectangle, text};
-use piston_window::character::CharacterCache;
+pub use piston_window::Event;
+pub use piston_window::graphics::{line, rectangle, text, Context, Transformed};
+pub use piston_window::wgpu_graphics::WgpuGraphics;
+use piston_window::graphics::character::CharacterCache;
 
 use super::Resources;
 use super::cam::Cam;
@@ -40,7 +41,7 @@ pub enum States {
 
 pub trait WindowBase {
 
-    fn paint(&mut self, c: Context, g: &mut GlGraphics);
+    fn paint(&mut self, c: Context, g: &mut WgpuGraphics);
     fn event_dispatcher(&mut self, event: &Event, cur_state: &Cell<States>) -> PostAction;
     fn is_modal(&self) -> bool { false }
 
@@ -48,14 +49,14 @@ pub trait WindowBase {
 
 pub trait InfoWindowTrait: WindowBase {
 
-    fn paint_info_window(&mut self, c: Context, g: &mut GlGraphics,
+    fn paint_info_window(&mut self, c: Context, g: &mut WgpuGraphics,
                          scr_width: f64, scr_height: f64, resources: Rc<RefCell<Resources>>,
                          msg: &str, prompt: &str) {
 
         let font_size = 15u32;
 
-        let msg_width = resources.borrow_mut().font.width(font_size, msg);
-        let prompt_width = resources.borrow_mut().font.width(font_size, prompt);
+        let msg_width = resources.borrow_mut().font.width(font_size, msg).unwrap_or(0.0);
+        let prompt_width = resources.borrow_mut().font.width(font_size, prompt).unwrap_or(0.0);
 
         let prompt_outer_window_width = msg_width + 60.0;
         let prompt_outer_window_height = 60.0;

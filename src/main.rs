@@ -4,7 +4,6 @@
 #[macro_use]
 extern crate clap;
 extern crate piston_window;
-extern crate opengl_graphics;
 extern crate find_folder;
 extern crate engine;
 extern crate ui;
@@ -14,8 +13,7 @@ use std::cell::RefCell;
 
 use find_folder::Search;
 use piston_window::{PistonWindow, WindowSettings};
-
-use opengl_graphics::glyph_cache::GlyphCache;
+use piston_window::wgpu_graphics::TextureSettings;
 
 use clap::{App, Arg};
 use engine::loader::from_file as load_from_file;
@@ -34,19 +32,23 @@ impl<'a> Game<'a> {
         let window: PistonWindow = WindowSettings::new(
             "Conway's Game of Life",
             [screen_width as u32, screen_height as u32]
-        ).opengl(ui::OPENGL)
+        )
             .samples(8)
             .exit_on_esc(true)
             .build()
             .unwrap();
+        let font = window.load_font(
+            Search::ParentsThenKids(3, 3)
+                .for_folder("assets").unwrap()
+                .join("Roboto-Regular.ttf"),
+            TextureSettings::new(),
+        ).unwrap();
 
         let mut tmp = Game {
             ui_manager: ui::new(Rc::new(ui::GraphicsWindow::new(screen_width, screen_height, window)),
                                 Rc::new(RefCell::new(engine::Engine::new(None, board_cols, board_rows))),
                                 Rc::new(RefCell::new(ui::Resources {
-                                    font: GlyphCache::new(Search::ParentsThenKids(3, 3).
-                                    for_folder("assets").unwrap().
-                                    join("Roboto-Regular.ttf")).unwrap()
+                                    font: font
                                 }))
             ),
         };

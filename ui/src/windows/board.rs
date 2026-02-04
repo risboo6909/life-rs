@@ -1,18 +1,17 @@
 extern crate piston_window;
 extern crate engine;
 
-use piston_window::{Context, Event, Input, Button, Key,
-                    MouseButton, Motion, line, rectangle};
+use piston_window::{Event, Button, Key, MouseButton};
+use piston_window::graphics::{Context, line, rectangle};
+use piston_window::{MouseCursorEvent, PressEvent, ReleaseEvent, UpdateEvent};
 
-use super::{WindowBase, PostAction};
+use super::{WindowBase, PostAction, WgpuGraphics};
 use super::super::States;
 
 use super::super::{CellProp, GraphicsWindow};
 use super::Cam;
 
 use engine::{Engine, CellDesc};
-
-use opengl_graphics::GlGraphics;
 
 use std::rc::Rc;
 use std::cell::{RefCell, Cell};
@@ -109,7 +108,7 @@ impl GameBoard {
 
 impl WindowBase for GameBoard {
 
-    fn paint(&mut self, c: Context, g: &mut GlGraphics) {
+    fn paint(&mut self, c: Context, g: &mut WgpuGraphics) {
 
         if self.render {
             {
@@ -135,138 +134,69 @@ impl WindowBase for GameBoard {
     }
 
     fn event_dispatcher(&mut self, event: &Event, cur_state: &Cell<States>) -> PostAction {
+        if event.update_args().is_some() {
+            if cur_state.get() == States::Working || cur_state.get() == States::StepByStep {
+                if !self.render ||
+                    Instant::now() - self.last_iter_time >= Duration::from_millis(2) ||
+                    cur_state.get() == States::StepByStep {
 
-        match event {
+                    self.engine.borrow_mut().iterations(1);
+                    self.last_iter_time = Instant::now();
 
-            &Event::Update(_) => {
-
-                if cur_state.get() == States::Working || cur_state.get() == States::StepByStep {
-                    if !self.render ||
-                        Instant::now() - self.last_iter_time >= Duration::from_millis(2) ||
-                        cur_state.get() == States::StepByStep {
-
-                        self.engine.borrow_mut().iterations(1);
-                        self.last_iter_time = Instant::now();
-
-                        if cur_state.get() == States::StepByStep {
-                            cur_state.set(States::Paused);
-                        }
-
+                    if cur_state.get() == States::StepByStep {
+                        cur_state.set(States::Paused);
                     }
                 }
-
             }
+        }
 
-            &Event::Input(Input::Press(Button::Keyboard(Key::P))) => {
-                // always enable rendering in pause mode
-                self.render = true;
+        if let Some([x, y]) = event.mouse_cursor_args() {
+            if cur_state.get() == States::Draw {
+                self.born_or_kill(false, x, y);
             }
+            self.last_pos = Some([x, y]);
+        }
 
-            &Event::Input(Input::Press(Button::Keyboard(Key::S))) => {
-                // always enable rendering in step by step mode
-                self.render = true;
+        if let Some(Button::Mouse(MouseButton::Left)) = event.press_args() {
+            cur_state.set(States::Draw);
+        }
+
+        if let Some(Button::Mouse(MouseButton::Left)) = event.release_args() {
+            if let Some(pos) = self.last_pos {
+                self.born_or_kill(true, pos[0], pos[1]);
+                cur_state.set(States::Paused);
             }
+        }
 
-            &Event::Input(Input::Press(Button::Keyboard(Key::G))) => {
-                // show/hide grid
-                self.show_grid = !self.show_grid;
-            }
-
-            // mouse controls ->
-            &Event::Input(Input::Press(Button::Mouse(MouseButton::Left))) => {
-                cur_state.set(States::Draw);
-            }
-
-            &Event::Input(Input::Release(Button::Mouse(MouseButton::Left))) => {
-                if self.last_pos.is_some() {
-                    let pos = self.last_pos.unwrap();
-                    self.born_or_kill(true, pos[0], pos[1]);
-
-                    cur_state.set(States::Paused);
+        if let Some(Button::Keyboard(key)) = event.press_args() {
+            match key {
+                Key::P | Key::S => {
+                    // always enable rendering in pause and step-by-step modes
+                    self.render = true;
                 }
-            }
-
-            &Event::Input(Input::Move(Motion::MouseCursor(x, y))) => {
-                if cur_state.get() == States::Draw {
-                    self.born_or_kill(false, x, y);
+                Key::G => self.show_grid = !self.show_grid,
+                Key::Right => self.cam.move_right(),
+                Key::Left => self.cam.move_left(),
+                Key::Up => self.cam.move_up(),
+                Key::Down => self.cam.move_down(),
+                Key::NumPadMinus | Key::Minus => self.cam.zoom_out(),
+                Key::NumPadPlus | Key::Equals => self.cam.zoom_in(),
+                Key::R => {
+                    // in pause mode 'R' is handled in UI layer, here it toggles rendering.
+                    if cur_state.get() != States::Paused {
+                        self.render = !self.render;
+                    }
                 }
-                self.last_pos = Some([x, y]);
+                Key::F => self.fit_board(),
+                _ => {}
             }
-            // mouse control <-
+        }
 
-            // movements control ->
-            &Event::Input(Input::Press(Button::Keyboard(Key::Right))) => {
-                self.cam.move_right();
+        if let Some(Button::Keyboard(key)) = event.release_args() {
+            match key {
+                Key::Right | Key::Left | Key::Up | Key::Down => self.cam.reset_move_step(),
+                _ => {}
             }
-
-            &Event::Input(Input::Release(Button::Keyboard(Key::Right))) => {
-                self.cam.reset_move_step();
-            }
-
-            &Event::Input(Input::Press(Button::Keyboard(Key::Left))) => {
-                self.cam.move_left();
-            }
-
-            &Event::Input(Input::Release(Button::Keyboard(Key::Left))) => {
-                self.cam.reset_move_step();
-            }
-
-            &Event::Input(Input::Press(Button::Keyboard(Key::Up))) => {
-                self.cam.move_up();
-            }
-
-            &Event::Input(Input::Release(Button::Keyboard(Key::Up))) => {
-                self.cam.reset_move_step();
-            }
-
-            &Event::Input(Input::Press(Button::Keyboard(Key::Down))) => {
-                self.cam.move_down();;
-            }
-
-            &Event::Input(Input::Release(Button::Keyboard(Key::Down))) => {
-                self.cam.reset_move_step();
-            }
-            // movements control <-
-
-            // zoom out ->
-            &Event::Input(Input::Press(Button::Keyboard(Key::NumPadMinus))) => {
-                self.cam.zoom_out();
-            }
-
-            &Event::Input(Input::Press(Button::Keyboard(Key::Minus))) => {
-                self.cam.zoom_out();
-            }
-            // zoom out <-
-
-            // zoom in ->
-            &Event::Input(Input::Press(Button::Keyboard(Key::NumPadPlus))) => {
-                self.cam.zoom_in();
-            }
-
-            // use "Equals" instead of "Plus" to avoid holding shift key requirement
-            &Event::Input(Input::Press(Button::Keyboard(Key::Equals))) => {
-                self.cam.zoom_in();
-            }
-            // zoom in <-
-
-            // misc controls ->
-            &Event::Input(Input::Press(Button::Keyboard(Key::R))) => {
-                // in pause mode - fill board with a random pattern
-                if cur_state.get() != States::Paused {
-                    // otherwise enable/disable rendering
-                    self.render = !self.render;
-                }
-            }
-
-            &Event::Input(Input::Press(Button::Keyboard(Key::F))) => {
-                // reset camera coordinates to defaults
-                //self.cam.reset();
-                self.fit_board();
-            }
-            // misc controls <-
-
-            _ => {}
-
         }
 
         PostAction::Transfer
@@ -401,7 +331,7 @@ impl GameBoard {
         [r as f32, 1.0 - r as f32, 0.0, 0.5]
     }
 
-    fn draw_borders(&self, c: &Context, g: &mut GlGraphics) {
+    fn draw_borders(&self, c: &Context, g: &mut WgpuGraphics) {
 
         // draw borders
         let right_offset_x = self.get_right_border();
@@ -439,7 +369,7 @@ impl GameBoard {
         }
    }
 
-   fn draw_grid(&self, c: &Context, g: &mut GlGraphics) {
+   fn draw_grid(&self, c: &Context, g: &mut WgpuGraphics) {
 
        let right_offset_x = self.get_right_border();
        let left_offset_x = self.get_left_border();
