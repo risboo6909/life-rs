@@ -2,6 +2,8 @@
 
 Conway's Game of Life implemented in Rust using Piston.
 
+![life-rs demo](life.gif)
+
 ## Build
 
 ```bash
